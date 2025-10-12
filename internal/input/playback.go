@@ -154,16 +154,18 @@ func AdvancePlayback(m *model.Model) {
 			activeTrackCount++
 			log.Printf("DEBUG_SONG: Processing active track %d, ticksLeft=%d", track, m.SongPlaybackTicksLeft[track])
 
-			// Decrement ticks for this track
+			// Decrement ticks for this track if > 0
 			if m.SongPlaybackTicksLeft[track] > 0 {
 				m.SongPlaybackTicksLeft[track]--
 				log.Printf("Song track %d: %d ticks remaining", track, m.SongPlaybackTicksLeft[track])
 			}
 
-			// Only advance this track when its ticks reach 0
+			// Only advance when ticks reach 0
 			if m.SongPlaybackTicksLeft[track] > 0 {
 				continue
 			}
+
+			log.Printf("Song track %d: ticks exhausted, advancing", track)
 
 			// Now advance to next playable row for this track
 			if !advanceToNextPlayableRowForTrack(m, track) {

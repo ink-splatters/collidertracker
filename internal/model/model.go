@@ -2179,8 +2179,9 @@ func (m *Model) LoadTicksLeftForTrack(track int) {
 	if dtValue <= 0 {
 		m.SongPlaybackTicksLeft[track] = 0
 	} else {
-		// Set to dtValue - 1 because row was already emitted during initialization/advancement
-		m.SongPlaybackTicksLeft[track] = dtValue - 1
+		// Set to dtValue so the row plays for exactly DT ticks
+		// The playback logic will decrement on the LAST tick and then advance
+		m.SongPlaybackTicksLeft[track] = dtValue
 	}
 }
 
