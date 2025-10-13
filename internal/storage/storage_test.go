@@ -155,10 +155,22 @@ func TestAutoSave(t *testing.T) {
 		_, err := os.Stat(dataFile)
 		assert.True(t, os.IsNotExist(err))
 
-		// Wait for debounce timeout plus a bit more
-		time.Sleep(1200 * time.Millisecond)
+		// Wait for debounce timeout with polling to handle CI timing variations
+		timeout := time.After(3 * time.Second)
+		tick := time.Tick(100 * time.Millisecond)
+		fileCreated := false
+		for !fileCreated {
+			select {
+			case <-timeout:
+				t.Fatal("Timed out waiting for data.json.gz to be created")
+			case <-tick:
+				if _, err := os.Stat(dataFile); err == nil {
+					fileCreated = true
+				}
+			}
+		}
 
-		// Should have saved by now
+		// File should exist now
 		_, err = os.Stat(dataFile)
 		assert.NoError(t, err)
 	})
