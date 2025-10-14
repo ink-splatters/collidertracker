@@ -29,51 +29,35 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 
 				// Special handling for DX7 preset display
 				if param.Key == "preset" && settings.Name == "DX7" {
-					if value == -1 {
-						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
+					patchName, err := supercollider.GetDX7PatchName(int(value))
+					if err == nil {
+						columnStatus = fmt.Sprintf("%s: %s (%.0f)", param.DisplayName, patchName, value)
 					} else {
-						patchName, err := supercollider.GetDX7PatchName(int(value))
-						if err == nil {
-							columnStatus = fmt.Sprintf("%s: %s (%.0f)", param.DisplayName, patchName, value)
-						} else {
-							columnStatus = fmt.Sprintf("%s: %.0f", param.DisplayName, value)
-						}
+						columnStatus = fmt.Sprintf("%s: %.0f", param.DisplayName, value)
 					}
 				} else if param.Key == "model" && settings.Name == "MiBraids" {
 					// Special handling for MiBraids model display
-					if value == -1 {
-						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
-					} else {
-						modelName := types.GetMiBraidsModelName(int(value))
-						columnStatus = fmt.Sprintf("%s: %s (%.0f)", param.DisplayName, modelName, value)
-					}
+					modelName := types.GetMiBraidsModelName(int(value))
+					columnStatus = fmt.Sprintf("%s: %s (%.0f)", param.DisplayName, modelName, value)
 				} else if param.Key == "engine" && settings.Name == "MiPlaits" {
 					// Special handling for MiPlaits engine display
-					if value == -1 {
-						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
-					} else {
-						engineName := types.GetMiPlaitsEngineName(int(value))
-						columnStatus = fmt.Sprintf("%s: %s (%.0f)", param.DisplayName, engineName, value)
-					}
+					engineName := types.GetMiPlaitsEngineName(int(value))
+					columnStatus = fmt.Sprintf("%s: %s (%.0f)", param.DisplayName, engineName, value)
 				} else {
 					// Standard parameter display
-					if value == -1 {
-						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
+					// Use DisplayFormatter if available, otherwise use DisplayFormat or default formatting
+					if param.DisplayFormatter != nil {
+						formattedValue := param.DisplayFormatter(value)
+						columnStatus = fmt.Sprintf("%s: %s", param.DisplayName, formattedValue)
+					} else if param.DisplayFormat != "" {
+						formattedValue := fmt.Sprintf(param.DisplayFormat, value)
+						columnStatus = fmt.Sprintf("%s: %s", param.DisplayName, formattedValue)
+					} else if param.Type == types.ParameterTypeHex {
+						columnStatus = fmt.Sprintf("%s: %02X", param.DisplayName, int(value))
+					} else if param.Type == types.ParameterTypeFloat {
+						columnStatus = fmt.Sprintf("%s: %.2f", param.DisplayName, value)
 					} else {
-						// Use DisplayFormatter if available, otherwise use DisplayFormat or default formatting
-						if param.DisplayFormatter != nil {
-							formattedValue := param.DisplayFormatter(value)
-							columnStatus = fmt.Sprintf("%s: %s", param.DisplayName, formattedValue)
-						} else if param.DisplayFormat != "" {
-							formattedValue := fmt.Sprintf(param.DisplayFormat, value)
-							columnStatus = fmt.Sprintf("%s: %s", param.DisplayName, formattedValue)
-						} else if param.Type == types.ParameterTypeHex {
-							columnStatus = fmt.Sprintf("%s: %02X", param.DisplayName, int(value))
-						} else if param.Type == types.ParameterTypeFloat {
-							columnStatus = fmt.Sprintf("%s: %.2f", param.DisplayName, value)
-						} else {
-							columnStatus = fmt.Sprintf("%s: %.0f", param.DisplayName, value)
-						}
+						columnStatus = fmt.Sprintf("%s: %.0f", param.DisplayName, value)
 					}
 				}
 			} else {
@@ -127,49 +111,33 @@ func RenderSoundMakerView(m *model.Model) string {
 
 				// Special formatting for DX7 preset
 				if param.Key == "preset" && settings.Name == "DX7" {
-					if value == -1 {
-						valueStr = "--"
+					patchName, err := supercollider.GetDX7PatchName(int(value))
+					if err == nil {
+						valueStr = fmt.Sprintf("%s", patchName)
 					} else {
-						patchName, err := supercollider.GetDX7PatchName(int(value))
-						if err == nil {
-							valueStr = fmt.Sprintf("%s", patchName)
-						} else {
-							valueStr = fmt.Sprintf("%.0f", value)
-						}
+						valueStr = fmt.Sprintf("%.0f", value)
 					}
 				} else if param.Key == "model" && settings.Name == "MiBraids" {
 					// Special formatting for MiBraids model
-					if value == -1 {
-						valueStr = "--"
-					} else {
-						modelName := types.GetMiBraidsModelName(int(value))
-						valueStr = fmt.Sprintf("%s", modelName)
-					}
+					modelName := types.GetMiBraidsModelName(int(value))
+					valueStr = fmt.Sprintf("%s", modelName)
 				} else if param.Key == "engine" && settings.Name == "MiPlaits" {
 					// Special formatting for MiPlaits engine
-					if value == -1 {
-						valueStr = "--"
-					} else {
-						engineName := types.GetMiPlaitsEngineName(int(value))
-						valueStr = fmt.Sprintf("%s", engineName)
-					}
+					engineName := types.GetMiPlaitsEngineName(int(value))
+					valueStr = fmt.Sprintf("%s", engineName)
 				} else {
-					if value == -1 {
-						valueStr = "--"
+					// Use DisplayFormatter if available, otherwise use DisplayFormat or default formatting
+					if param.DisplayFormatter != nil {
+						valueStr = param.DisplayFormatter(value)
+					} else if param.DisplayFormat != "" {
+						valueStr = fmt.Sprintf(param.DisplayFormat, value)
+					} else if param.Type == types.ParameterTypeHex {
+						valueStr = fmt.Sprintf("%02X", int(value))
+					} else if param.Type == types.ParameterTypeFloat {
+						// Display float parameters directly
+						valueStr = fmt.Sprintf("%.2f", value)
 					} else {
-						// Use DisplayFormatter if available, otherwise use DisplayFormat or default formatting
-						if param.DisplayFormatter != nil {
-							valueStr = param.DisplayFormatter(value)
-						} else if param.DisplayFormat != "" {
-							valueStr = fmt.Sprintf(param.DisplayFormat, value)
-						} else if param.Type == types.ParameterTypeHex {
-							valueStr = fmt.Sprintf("%02X", int(value))
-						} else if param.Type == types.ParameterTypeFloat {
-							// Display float parameters directly
-							valueStr = fmt.Sprintf("%.2f", value)
-						} else {
-							valueStr = fmt.Sprintf("%.0f", value)
-						}
+						valueStr = fmt.Sprintf("%.0f", value)
 					}
 				}
 

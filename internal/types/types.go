@@ -803,23 +803,23 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 			{
 				Key: "fm_mod", DisplayName: "FM Mod", Type: ParameterTypeFloat,
-				MinValue: -1000, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 0,
+				MinValue: -1.0, MaxValue: 1.0, DefaultValue: 0.0, Column: 1, Order: 0,
 			},
 			{
 				Key: "timb_mod", DisplayName: "Timb Mod", Type: ParameterTypeFloat,
-				MinValue: -1000, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 1,
+				MinValue: -1.0, MaxValue: 1.0, DefaultValue: 0.0, Column: 1, Order: 1,
 			},
 			{
 				Key: "morph_mod", DisplayName: "Morph Mod", Type: ParameterTypeFloat,
-				MinValue: -1000, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 2,
+				MinValue: -1.0, MaxValue: 1.0, DefaultValue: 0.0, Column: 1, Order: 2,
 			},
 			{
 				Key: "decay", DisplayName: "Decay", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 3,
+				MinValue: 0, MaxValue: 1.0, DefaultValue: 0.0, Column: 1, Order: 3,
 			},
 			{
 				Key: "lpg_colour", DisplayName: "LPG Color", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 4,
+				MinValue: 0, MaxValue: 1.0, DefaultValue: 0.0, Column: 1, Order: 4,
 			},
 			{
 				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
@@ -1132,11 +1132,16 @@ func (settings *SoundMakerSettings) GetParameterValue(key string) float32 {
 	// Return default value from instrument definition if available
 	if def, exists := GetInstrumentDefinition(settings.Name); exists {
 		if param, found := def.GetParameterByKey(key); found {
-			// Use Default field if set, otherwise fall back to DefaultValue
+			// Use Default field if set
 			if param.Default != 0 {
 				return param.Default
 			}
-			return param.DefaultValue
+			// Use DefaultValue if set (not -1)
+			if param.DefaultValue != -1 {
+				return param.DefaultValue
+			}
+			// Otherwise use the minimum value in the acceptable range
+			return param.MinValue
 		}
 	}
 
@@ -1160,11 +1165,15 @@ func (settings *SoundMakerSettings) InitializeParameters() {
 
 		for _, param := range def.Parameters {
 			if _, exists := settings.Parameters[param.Key]; !exists {
-				// Use Default field if set, otherwise fall back to DefaultValue
+				// Use Default field if set
 				if param.Default != 0 {
 					settings.Parameters[param.Key] = param.Default
-				} else {
+				} else if param.DefaultValue != -1 {
+					// Use DefaultValue if set (not -1)
 					settings.Parameters[param.Key] = param.DefaultValue
+				} else {
+					// Otherwise use the minimum value in the acceptable range
+					settings.Parameters[param.Key] = param.MinValue
 				}
 			}
 		}
