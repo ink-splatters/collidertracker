@@ -81,6 +81,7 @@ Routine{
     		var ducked;
 	        snd = Open303.ar(
 	            gate: \gate.kr(1),
+	            trig: t_trig,
 	            noteNum: \note.kr(60),
 	            velocity: \velocity.kr(100)/127.0,
 	            waveform: \waveform.kr(0.2), // OPTION: waveform 0.0-1.0, default 0.5, coarse 0.1, fine 0.01
@@ -88,7 +89,7 @@ Routine{
 	            cutoff: \lowPassFilter.kr(1000),
 	            resonance: \resonance.kr(85), // OPTION: resonance 1-200, default 50, coarse 10, fine 1
 				envMod: \envMod.kr(60), // OPTION: 0–100, default 50, coarse 10, fine 1
-				decay: \decay.kr(800), // OPTION: 30–3000, default 1000, coarse 100, fine 10
+				decay: \normalDecay.kr(800), // OPTION: 30–3000, default 1000, coarse 100, fine 10
 				accent: \accent.kr(70), // OPTION: 0–100, default 50, coarse 10, fine 1
 				volume: \baseVolume.kr(6.neg), // OPTION: -60–0, default -12, coarse 6, fine 1
 				ampSustain: \ampSustain.kr(0), // OPTION: -inf–0, default 0, coarse 6, fine 1

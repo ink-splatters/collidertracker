@@ -940,7 +940,7 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 				CoarseStep: 10, FineStep: 1, DisplayFormat: "%.0f",
 			},
 			{
-				Key: "decay", DisplayName: "Decay", Type: ParameterTypeFloat,
+				Key: "normalDeecay", DisplayName: "Decay", Type: ParameterTypeFloat,
 				MinValue: 30, MaxValue: 3000, DefaultValue: 1000, Default: 1000, Column: 0, Order: 4,
 				CoarseStep: 100, FineStep: 10, DisplayFormat: "%.0f ms",
 			},
