@@ -75,6 +75,70 @@ Routine{
     	}).add;
 
 
+    	SynthDef("Open303",{
+    		arg t_trig=1;
+	        var snd, env;
+    		var ducked;
+	        snd = Open303.ar(
+	            gate: \gate.kr(1),
+	            noteNum: \note.kr(60),
+	            velocity: \velocity.kr(100)/127.0,
+	            waveform: \waveform.kr(0.2), // OPTION: waveform 0.0-1.0, default 0.5, coarse 0.1, fine 0.01
+	            tuning: \tuning.kr(440), // OPTION: tuning 110-880, default 440, coarse 10, fine 1
+	            cutoff: \lowPassFilter.kr(1000),
+	            resonance: \resonance.kr(85), // OPTION: resonance 1-200, default 50, coarse 10, fine 1
+				envMod: \envMod.kr(60), // OPTION: 0–100, default 50, coarse 10, fine 1
+				decay: \decay.kr(800), // OPTION: 30–3000, default 1000, coarse 100, fine 10
+				accent: \accent.kr(70), // OPTION: 0–100, default 50, coarse 10, fine 1
+				volume: \baseVolume.kr(6.neg), // OPTION: -60–0, default -12, coarse 6, fine 1
+				ampSustain: \ampSustain.kr(0), // OPTION: -inf–0, default 0, coarse 6, fine 1
+				ampDecay: \ampDecay.kr(1230), // OPTION: 30–3000, default 1230, coarse 100, fine 10
+				ampRelease: \ampRelease.kr(1), // OPTION: 1–2000, default 1, coarse 100, fine 1
+				feedbackHPF: \feedbackHPF.kr(150), // OPTION: 20–2000, default 150, coarse 100, fine 10
+				normalAttack: \normalAttack.kr(3), // OPTION: 0.3–30, default 3, coarse 1, fine 0.1
+				accentAttack: \accentAttack.kr(3), // OPTION: 0.3–30, default 3, coarse 1, fine 0.1
+				accentDecay: \accentDecay.kr(200), // OPTION: 30–3000, default 200, coarse 100, fine 10
+				slideTime: \slideTime.kr(60), // OPTION: 0–300, default 60, coarse 10, fine 1
+	        );
+			env = EnvGen.ar(
+				Env.perc(\attack.kr(0.1), \duration.kr(1)), t_trig, doneAction:2
+			);
+
+    		snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+    		snd = Pan2.ar(snd,\pan.kr(0));
+
+    		// check if signal is ducked
+    		// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+    		ducked = Compander.ar(
+    			in:         snd,     // signal to be ducked
+    			control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+    			thresh:     \duckingThresh.kr(0.02),  // start reducing above this
+    			slopeBelow: 1,       // unchanged below threshold
+    			slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+    			clampTime:  \duckingAttack.kr(0.02),     // attack
+    			relaxTime:  \duckingRelease.kr(0.20)      // release
+    		);
+    		// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+    		snd = Select.ar(\duckingType.kr(0),
+    			[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+    		);
+    		// tiny floor to avoid denormals at extreme reductions:
+    		snd = snd + (1e-6 * WhiteNoise.ar(1));
+    		Out.ar(\duckingBusOut.kr(0),
+    			Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
+    				0,  // 0 = not ducking
+    				1,  // 1 = is ducking (writer)
+    				0   // 2 = not ducking
+    			])
+    		);
+
+    		Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+    		Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+    		Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
+    		Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
+    	}).add;
+
+
     	SynthDef("TB303",{
     		arg t_trig=1;
     		var osc, filt, preDrive, postDrive;
