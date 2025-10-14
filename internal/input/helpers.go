@@ -205,8 +205,8 @@ func ModifyValue(m *model.Model, delta int) {
 			// Instrument view note column: MIDI notes (0-127) with special increment behavior
 			var newValue int
 			if currentValue == -1 {
-				// First edit on an empty cell: initialize to middle C (60)
-				newValue = 60
+				// First edit on an empty cell: initialize to the last note above (or middle C (60) if no notes above)
+				newValue = FindFirstNonEmptyNoteAbove(phrasesData, m.CurrentPhrase, m.CurrentRow)
 			} else {
 				// Apply special increment logic for instrument notes
 				// Coarse (Ctrl+Up/Down) should increment by 12 (octaves)
@@ -2816,6 +2816,21 @@ func FindFirstNonEmptyDTAbove(phrasesData *[255][][]int, phrase, currentRow int)
 	}
 	// No non "--" DT found above, return default value of 1
 	return 1
+}
+
+// FindFirstNonEmptyNoteAbove finds the first non "--" note value above the current row
+// Returns the note value if found, or 60 (middle C / C-4) if none found
+func FindFirstNonEmptyNoteAbove(phrasesData *[255][][]int, phrase, currentRow int) int {
+	// Search upward from currentRow-1 to row 0
+	for row := currentRow - 1; row >= 0; row-- {
+		noteValue := (*phrasesData)[phrase][row][types.ColNote]
+		if noteValue != -1 {
+			// Found a non "--" note value
+			return noteValue
+		}
+	}
+	// No non "--" note found above, return default value of 60 (middle C / C-4)
+	return 60
 }
 
 // GetDTStatusMessage returns a status message for DT column
