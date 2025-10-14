@@ -922,7 +922,7 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			{
 				Key: "waveform", DisplayName: "Waveform", Type: ParameterTypeFloat,
 				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.5, Default: 0.5, Column: 0, Order: 0,
-				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f sawtooth/square",
 			},
 			{
 				Key: "tuning", DisplayName: "Tuning", Type: ParameterTypeFloat,
@@ -936,7 +936,7 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 			{
 				Key: "envMod", DisplayName: "Env Mod", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 100, DefaultValue: 50, Default: 50, Column: 0, Order: 3,
+				MinValue: 0, MaxValue: 200, DefaultValue: 50, Default: 50, Column: 0, Order: 3,
 				CoarseStep: 10, FineStep: 1, DisplayFormat: "%.0f",
 			},
 			{
@@ -946,8 +946,8 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 			{
 				Key: "accent", DisplayName: "Accent", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 100, DefaultValue: 50, Default: 50, Column: 0, Order: 5,
-				CoarseStep: 10, FineStep: 1, DisplayFormat: "%.0f",
+				MinValue: 0, MaxValue: 200, DefaultValue: 50, Default: 50, Column: 0, Order: 5,
+				CoarseStep: 10, FineStep: 1, DisplayFormat: "%.0f%%",
 			},
 			{
 				Key: "baseVolume", DisplayName: "Volume", Type: ParameterTypeFloat,
@@ -967,17 +967,17 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			{
 				Key: "feedbackHPF", DisplayName: "Feedback HPF", Type: ParameterTypeFloat,
 				MinValue: 20, MaxValue: 2000, DefaultValue: 150, Default: 150, Column: 1, Order: 2,
-				CoarseStep: 100, FineStep: 10, DisplayFormat: "%.0f",
+				CoarseStep: 100, FineStep: 10, DisplayFormat: "%.0f Hz",
 			},
 			{
 				Key: "normalAttack", DisplayName: "Normal Attack", Type: ParameterTypeFloat,
 				MinValue: 0.3, MaxValue: 30, DefaultValue: 3, Default: 3, Column: 1, Order: 3,
-				CoarseStep: 1, FineStep: 0.1, DisplayFormat: "%.1f",
+				CoarseStep: 1, FineStep: 0.1, DisplayFormat: "%.1f ms",
 			},
 			{
 				Key: "accentAttack", DisplayName: "Accent Attack", Type: ParameterTypeFloat,
 				MinValue: 0.3, MaxValue: 30, DefaultValue: 3, Default: 3, Column: 1, Order: 4,
-				CoarseStep: 1, FineStep: 0.1, DisplayFormat: "%.1f",
+				CoarseStep: 1, FineStep: 0.1, DisplayFormat: "%.1f ms",
 			},
 			{
 				Key: "accentDecay", DisplayName: "Accent Decay", Type: ParameterTypeFloat,
