@@ -354,7 +354,7 @@ Routine{
     			doneAction:2,
     		);
     		var snd = Pulse.ar(\note.kr(60).midicps, 0.5);
-    		snd = MoogFF.ar(snd, \lowPassFilter.kr(20000), 1.5);
+    		snd = MoogFF.ar(snd, \lowPassFilter.kr(20000), \resonance.kr(1.5));
     		snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
     			* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,0).dbamp;
 

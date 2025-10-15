@@ -720,20 +720,9 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 		Description: "Polyphonic percussion synthesizer",
 		Parameters: []InstrumentParameterDef{
 			{
-				Key: "A", DisplayName: "A", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 0,
-			},
-			{
-				Key: "B", DisplayName: "B", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 1,
-			},
-			{
-				Key: "C", DisplayName: "C", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 0,
-			},
-			{
-				Key: "D", DisplayName: "D", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 1,
+				Key: "resonance", DisplayName: "Resonance", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 3.0, DefaultValue: 1.5, Column: 0, Order: 0,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
 			},
 			{
 				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
