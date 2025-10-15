@@ -920,18 +920,18 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 			{
 				Key: "resonance", DisplayName: "Resonance", Type: ParameterTypeFloat,
-				MinValue: 1, MaxValue: 200, DefaultValue: 50, Default: 50, Column: 0, Order: 2,
+				MinValue: 1, MaxValue: 300, DefaultValue: 50, Default: 50, Column: 0, Order: 2,
 				CoarseStep: 10, FineStep: 1, DisplayFormat: "%.0f%%",
 			},
 			{
 				Key: "envMod", DisplayName: "Env Mod", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 200, DefaultValue: 50, Default: 50, Column: 0, Order: 3,
-				CoarseStep: 10, FineStep: 1, DisplayFormat: "%.0f",
+				MinValue: 0, MaxValue: 400, DefaultValue: 50, Default: 50, Column: 0, Order: 3,
+				CoarseStep: 10, FineStep: 1, DisplayFormat: "%.0f%%",
 			},
 			{
-				Key: "normalDeecay", DisplayName: "Decay", Type: ParameterTypeFloat,
-				MinValue: 30, MaxValue: 3000, DefaultValue: 1000, Default: 1000, Column: 0, Order: 4,
-				CoarseStep: 100, FineStep: 10, DisplayFormat: "%.0f ms",
+				Key: "normalDecay", DisplayName: "Decay", Type: ParameterTypeFloat,
+				MinValue: 1, MaxValue: 3000, DefaultValue: 1000, Default: 1000, Column: 0, Order: 4,
+				CoarseStep: 100, FineStep: 1, DisplayFormat: "%.0f ms",
 			},
 			{
 				Key: "accent", DisplayName: "Accent", Type: ParameterTypeFloat,
@@ -940,7 +940,7 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 			{
 				Key: "baseVolume", DisplayName: "Volume", Type: ParameterTypeFloat,
-				MinValue: -60, MaxValue: 0, DefaultValue: -12, Default: -12, Column: 0, Order: 6,
+				MinValue: -60, MaxValue: 24, DefaultValue: -12, Default: -12, Column: 0, Order: 6,
 				CoarseStep: 6, FineStep: 1, DisplayFormat: "%.0f dB",
 			},
 			{

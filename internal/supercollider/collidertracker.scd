@@ -83,7 +83,7 @@ Routine{
 	            gate: \gate.kr(1),
 	            trig: t_trig,
 	            noteNum: \note.kr(60),
-	            velocity: \velocity.kr(100)/127.0,
+	            velocity: (\velocity.kr(100)>64.0),
 	            waveform: \waveform.kr(0.2), // OPTION: waveform 0.0-1.0, default 0.5, coarse 0.1, fine 0.01
 	            tuning: \tuning.kr(440), // OPTION: tuning 110-880, default 440, coarse 10, fine 1
 	            cutoff: \lowPassFilter.kr(1000),
