@@ -626,16 +626,33 @@ func hasOpen303() bool {
 		return false
 	}
 
-	// Check for the Open303 executable
-	var execName string
-	if runtime.GOOS == "windows" {
-		execName = "Open303.exe"
-	} else {
-		execName = "Open303"
-	}
+	// Check for Open303.sc file recursively in the Extensions directory
+	extensionDirs := getSuperColliderExtensionDirs()
 
-	execPath := filepath.Join(installDir, execName)
-	return fileExists(execPath)
+	for _, dir := range extensionDirs {
+		// Check direct file path
+		if fileExists(filepath.Join(dir, "Open303.sc")) {
+			return true
+		}
+
+		// Check in subdirectories recursively
+		found := false
+		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+			if !info.IsDir() && info.Name() == "Open303.sc" {
+				found = true
+				return filepath.SkipDir
+			}
+			return nil
+		})
+
+		if found {
+			return true
+		}
+	}
+	return false
 }
 
 func getLocalExtensionDir() string {
