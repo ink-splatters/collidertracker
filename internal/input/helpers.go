@@ -1006,7 +1006,11 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	// Apply onset-based slicing if enabled
 	if exists && fileMetadata.SliceType == 1 && len(fileMetadata.Onsets) > 0 {
 		// Calculate which onset to use with modulo wrapping
+		// Handle negative slice numbers by wrapping around
 		onsetIndex := sliceNumber % len(fileMetadata.Onsets)
+		if onsetIndex < 0 {
+			onsetIndex += len(fileMetadata.Onsets)
+		}
 		
 		// Get the onset time in seconds
 		onsetTime := fileMetadata.Onsets[onsetIndex]
