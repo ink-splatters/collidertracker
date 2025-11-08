@@ -129,10 +129,15 @@ func SelectFile(m *model.Model) {
 	}
 
 	// Set initial metadata using getbpm.GetBPM
+	// Use the waveform WAV file for BPM detection if available (works better than FLAC)
 	// BPM should be float, slices should be 2x beats (rounded to int)
 	var bpm float64
 	var beats float64
-	beats, bpm, err = getbpm.GetBPM(fullPath)
+	bpmDetectionFile := fullPath
+	if waveformFile != "" {
+		bpmDetectionFile = waveformFile
+	}
+	beats, bpm, err = getbpm.GetBPM(bpmDetectionFile)
 	if err == nil {
 		slices := int(2 * math.Round(beats))
 		m.FileMetadata[fullPath] = types.FileMetadata{

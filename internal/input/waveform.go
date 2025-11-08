@@ -2,6 +2,7 @@ package input
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -34,10 +35,16 @@ func handleW(m *model.Model) tea.Cmd {
 		log.Printf("No audio file for current track")
 		return nil
 	}
-	
-	// Make sure the file is absolute path
+
+	// Make sure the file is absolute path and exists
 	if !filepath.IsAbs(file) {
-		file = filepath.Join(m.SaveFolder, file)
+		// Try to resolve relative to save folder
+		candidatePath := filepath.Join(m.SaveFolder, file)
+		if _, err := os.Stat(candidatePath); err == nil {
+			file = candidatePath
+		} else {
+			log.Printf("Warning: File not found at relative path %s or absolute path %s", candidatePath, file)
+		}
 	}
 	
 	// Ensure we have a waveform file for visualization
@@ -69,8 +76,18 @@ func handleW(m *model.Model) tea.Cmd {
 		}
 	}
 	
-	// Get audio duration
-	duration, _, _, err := getbpm.Length(file)
+	// Get audio duration from the waveform file (not the original audio file)
+	waveformFile := file
+	if hasMetadata && metadata.WaveformFile != "" {
+		waveformFile = metadata.WaveformFile
+	} else {
+		// If we don't have metadata with waveform file yet, get it from FileMetadata
+		if md, ok := m.FileMetadata[file]; ok && md.WaveformFile != "" {
+			waveformFile = md.WaveformFile
+		}
+	}
+
+	duration, _, _, err := getbpm.Length(waveformFile)
 	if err != nil {
 		log.Printf("Error getting audio duration: %v", err)
 		return nil

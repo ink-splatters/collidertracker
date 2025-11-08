@@ -2528,8 +2528,12 @@ func (m *Model) generateEqualSlices(filePath string) {
 
 	log.Printf("Generating equal slices for %s with %d slices", absPath, metadata.Slices)
 
-	// Get the audio file length
-	audioLength, _, _, err := getbpm.Length(absPath)
+	// Get the audio file length - use waveform file if available (works better than FLAC)
+	lengthDetectionFile := absPath
+	if metadata.WaveformFile != "" {
+		lengthDetectionFile = metadata.WaveformFile
+	}
+	audioLength, _, _, err := getbpm.Length(lengthDetectionFile)
 	if err != nil {
 		log.Printf("Equal slice generation failed for %s: could not get audio length: %v", absPath, err)
 		return

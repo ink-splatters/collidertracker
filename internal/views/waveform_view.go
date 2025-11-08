@@ -74,19 +74,19 @@ func RenderWaveformView(m *model.Model) string {
 		waveWidth = 40
 	}
 	
-	// Get audio duration
-	duration, _, _, err := getbpm.Length(file)
-	if err != nil {
-		content.WriteString(styles.Label.Render(fmt.Sprintf("Error loading file: %v", err)))
-		content.WriteString("\n")
-		return styles.Container.Render(content.String())
-	}
-	
 	// Render the waveform with markers
 	// Use the waveform file if available (converted for visualization), otherwise use original
 	waveformFile := file
 	if hasMetadata && metadata.WaveformFile != "" {
 		waveformFile = metadata.WaveformFile
+	}
+
+	// Get audio duration from the waveform file (not the original audio file)
+	duration, _, _, err := getbpm.Length(waveformFile)
+	if err != nil {
+		content.WriteString(styles.Label.Render(fmt.Sprintf("Error loading file: %v", err)))
+		content.WriteString("\n")
+		return styles.Container.Render(content.String())
 	}
 	
 	// Determine if we should show playhead (only if playing the current track)

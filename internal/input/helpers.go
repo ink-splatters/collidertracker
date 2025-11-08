@@ -1015,9 +1015,14 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		
 		// Get the onset time in seconds
 		onsetTime := fileMetadata.Onsets[onsetIndex]
-		
+
 		// Get the audio file length to calculate normalized positions
-		audioLength, _, _, err := getbpm.Length(effectiveFilename)
+		// Use waveform file if available (works better than FLAC)
+		lengthDetectionFile := effectiveFilename
+		if fileMetadata.WaveformFile != "" {
+			lengthDetectionFile = fileMetadata.WaveformFile
+		}
+		audioLength, _, _, err := getbpm.Length(lengthDetectionFile)
 		if err != nil {
 			log.Printf("WARNING: Failed to get audio length for %s: %v", effectiveFilename, err)
 		} else {

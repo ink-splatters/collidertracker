@@ -163,6 +163,13 @@ func DoSave(m *model.Model) {
 }
 
 func LoadState(m *model.Model, oscPort int, saveFolder string) error {
+	// Convert saveFolder to absolute path to avoid path doubling issues
+	absSaveFolder, err := filepath.Abs(saveFolder)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path for save folder: %w", err)
+	}
+	saveFolder = absSaveFolder
+
 	// Construct path to data.json.gz inside save folder
 	dataFilePath := filepath.Join(saveFolder, "data.json.gz")
 
@@ -449,18 +456,27 @@ func createSaveFolder(saveFolder string, samplerFiles []string, fileMetadata map
 		fileName := filepath.Base(originalPath)
 		destPath := filepath.Join(saveFolder, fileName)
 
-		// Check if the file is already in the save folder
-		// This handles both exact path matches and files that are already in the target directory
-		originalDir := filepath.Dir(originalPath)
-		if originalPath == destPath || originalDir == saveFolder {
-			// File is already in the save folder, just use the filename as relative path
+		// Check if the file is already in the save folder by comparing absolute paths
+		absOriginal, err := filepath.Abs(originalPath)
+		if err != nil {
+			log.Printf("Warning: Failed to get absolute path for %s: %v", originalPath, err)
+			absOriginal = originalPath
+		}
+		absDest, err2 := filepath.Abs(destPath)
+		if err2 != nil {
+			log.Printf("Warning: Failed to get absolute path for %s: %v", destPath, err2)
+			absDest = destPath
+		}
+
+		// If source and destination are the same, skip the copy
+		if absOriginal == absDest {
 			relativePaths[i] = fileName
 			log.Printf("File already in save folder: %s (relative: %s)", originalPath, fileName)
 			continue
 		}
 
 		// Copy file to save folder
-		err := copyFile(originalPath, destPath)
+		err = copyFile(originalPath, destPath)
 		if err != nil {
 			log.Printf("Warning: Failed to copy file %s to %s: %v", originalPath, destPath, err)
 			// Use original path if copy fails
@@ -487,6 +503,22 @@ func createSaveFolder(saveFolder string, samplerFiles []string, fileMetadata map
 
 // copyFile copies a file from source to destination
 func copyFile(src, dst string) error {
+	// Get absolute paths to compare
+	absSrc, err := filepath.Abs(src)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute source path: %w", err)
+	}
+	absDst, err := filepath.Abs(dst)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute destination path: %w", err)
+	}
+
+	// Check if source and destination are the same file
+	if absSrc == absDst {
+		log.Printf("Source and destination are the same file, skipping copy: %s", absSrc)
+		return nil // Not an error, just skip the copy
+	}
+
 	// Open source file
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -655,8 +687,8 @@ func LoadMetadataFromSaveFolder(saveFolder string, fileMetadata map[string]types
 		fileName := entry.Name()
 		ext := strings.ToLower(filepath.Ext(fileName))
 
-		// Only process wav files
-		if ext == ".wav" {
+		// Process both wav and flac files
+		if ext == ".wav" || ext == ".flac" {
 			filePath := filepath.Join(saveFolder, fileName)
 			metadata, err := loadFileMetadata(saveFolder, fileName)
 			if err != nil {
