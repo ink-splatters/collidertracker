@@ -162,6 +162,10 @@ jobs:
         run: |
           pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain
 
+      - name: Install sox
+        run: choco install sox
+        shell: powershell
+
       - name: Set up environment variables for Go
         shell: pwsh
         run: |
