@@ -114,9 +114,9 @@ func RenderWaveformView(m *model.Model) string {
 	content.WriteString("\n")
 	
 	// Display controls
-	content.WriteString(styles.Label.Render("Controls: m/Space (add slice) | Tab (select) | d/Backspace (delete) | Esc (unselect)"))
+	content.WriteString(styles.Label.Render("Controls: m (add slice) | Tab (select) | d/Backspace (delete) | Esc (unselect)"))
 	content.WriteString("\n")
-	content.WriteString(styles.Label.Render("          ← → (jog) | Shift+← → (fast jog) | ↑ ↓ (zoom) | w (exit)"))
+	content.WriteString(styles.Label.Render("          Space (playback) | c (play row) | ← → (jog) | Shift+← → (fast jog) | ↑ ↓ (zoom) | w (exit)"))
 	content.WriteString("\n")
 	
 	return styles.Container.Render(content.String())

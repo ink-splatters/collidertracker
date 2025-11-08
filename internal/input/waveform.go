@@ -111,13 +111,46 @@ func handleW(m *model.Model) tea.Cmd {
 // HandleWaveformInput handles input for waveform view
 func HandleWaveformInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.String() {
+	case "ctrl+q", "alt+q":
+		// Quit the program
+		return tea.Quit
+
 	case "w", "q":
 		// Exit waveform view
 		m.ViewMode = m.WaveformPreviousView
 		storage.AutoSave(m)
 		return nil
-		
-	case "m", " ":
+
+	case " ":
+		// Toggle playback (space bar)
+		return TogglePlayback(m)
+
+	case "c":
+		// Stop playback if playing, otherwise emit current row data
+		if m.IsPlaying {
+			m.IsPlaying = false
+
+			// Stop recording if active
+			if m.RecordingActive {
+				stopRecording(m)
+			}
+
+			// Clear file browser playback state
+			if m.CurrentlyPlayingFile != "" {
+				m.SendOSCPlaybackMessage(m.CurrentlyPlayingFile, false)
+				m.CurrentlyPlayingFile = ""
+			}
+
+			m.SendStopOSC()
+			log.Printf("Playback stopped via 'C' in waveform view")
+			return nil
+		}
+
+		// Emit current row data (play the current row)
+		EmitRowDataFor(m, m.CurrentPhrase, m.CurrentRow, m.CurrentTrack)
+		return nil
+
+	case "m":
 		// Add marker at midpoint
 		m.AddWaveformMarker()
 		storage.AutoSave(m)
@@ -127,7 +160,12 @@ func HandleWaveformInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 		// Select next marker
 		m.SelectNextWaveformMarker()
 		return nil
-		
+
+	case "esc":
+		// Unselect marker
+		m.WaveformSelectedSlice = -1
+		return nil
+
 	case "d", "backspace":
 		// Delete selected marker
 		m.DeleteSelectedWaveformMarker()
