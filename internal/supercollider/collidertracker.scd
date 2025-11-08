@@ -521,9 +521,11 @@ Routine{
     			var retrigCountFeedback = 0;
     			var timestretchPos, timestretchRate, effectTimestretch;
     			var side, atk, rel, depth, slopeAbove, thresh, ducked;
-
+				var sliceStartOriginal = sliceStart;
+				var sliceEndOriginal = sliceEnd;
     			// Position is always provided by Go code (sliceStart and sliceEnd)
     			// Handle reverse playback by swapping start and end
+				
     			pos = Select.kr(effectReverse>0,[
     				sliceStart,  // forward: use start position
     				sliceEnd     // reverse: use end position
@@ -681,8 +683,8 @@ Routine{
 					trackId,
 					gate,
 					posCur, 
-					sliceStart,
-					sliceEnd
+					sliceStartOriginal,
+					sliceEndOriginal
 				]);
 
     			// Feedback
