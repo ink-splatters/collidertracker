@@ -606,7 +606,7 @@ Routine{
     				end:frames,
     				resetPos:timestretchRate,
     			);
-				posCur = Select.ar(aOrB,[posB,posA])/frames;
+				posCur = Select.ar(aOrB,[posA,posB])/frames;
     			snd=(BufRd.ar(
     				numChannels:ch+1,
     				bufnum:buf,
