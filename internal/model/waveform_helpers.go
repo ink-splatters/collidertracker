@@ -195,22 +195,38 @@ func (m *Model) JogWaveformView(direction float64, fast bool) {
 func (m *Model) ZoomWaveformView(zoomIn bool) {
 	duration := m.WaveformEnd - m.WaveformStart
 	center := (m.WaveformStart + m.WaveformEnd) / 2.0
-	
+
+	// If a slice is selected, progressively shift center towards it
+	if m.WaveformSelectedSlice >= 0 {
+		// Get metadata for the current file
+		file := m.WaveformFile
+		if metadata, exists := m.FileMetadata[file]; exists {
+			// Check if the selected slice index is valid
+			if m.WaveformSelectedSlice < len(metadata.Onsets) {
+				selectedSliceTime := metadata.Onsets[m.WaveformSelectedSlice]
+
+				// Progressively move center towards selected slice (30% per zoom)
+				// This creates a smooth centering effect over multiple zoom operations
+				center = center + (selectedSliceTime - center) * 0.3
+			}
+		}
+	}
+
 	var newDuration float64
 	if zoomIn {
 		newDuration = duration * 0.8 // Zoom in by 20%
 	} else {
 		newDuration = duration * 1.25 // Zoom out by 25%
 	}
-	
+
 	// Don't zoom out beyond total duration (using cached duration)
 	if newDuration > m.WaveformDuration {
 		newDuration = m.WaveformDuration
 	}
-	
+
 	m.WaveformStart = center - newDuration/2.0
 	m.WaveformEnd = center + newDuration/2.0
-	
+
 	// Clamp to valid range
 	if m.WaveformStart < 0 {
 		m.WaveformStart = 0
