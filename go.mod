@@ -11,6 +11,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/lucasb-eyer/go-colorful v1.3.0
 	github.com/muesli/termenv v0.16.0
+	github.com/schollz/onsets v0.1.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.3.16
@@ -34,6 +35,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.19 // indirect
+	github.com/mjibson/go-dsp v0.0.0-20180508042940-11479a337f12 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
