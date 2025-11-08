@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/schollz/gowaveform"
 
@@ -89,8 +90,9 @@ func RenderWaveformView(m *model.Model) string {
 		return styles.Container.Render(content.String())
 	}
 	
-	// Determine if we should show playhead (only if playing the current track)
-	showPlayhead := m.PlayheadGate == 1 && m.PlayheadTrackID == m.CurrentTrack
+	// Determine if we should show playhead (only if playing the current track and updated within last 1 second)
+	timeSinceUpdate := time.Since(m.PlayheadLastUpdate)
+	showPlayhead := m.PlayheadGate == 1 && m.PlayheadTrackID == m.CurrentTrack && timeSinceUpdate < 1*time.Second
 	
 	waveformStr, err := renderWaveformWithMarkers(waveformFile, waveWidth, waveformHeight, 
 		m.WaveformStart, m.WaveformEnd, metadata.Onsets, m.WaveformSelectedSlice,
@@ -302,29 +304,29 @@ func renderWaveformWithMarkers(filepath string, width, height int, start, end fl
 			
 			// Apply color based on priority (highest priority last):
 			// 1. Waveform base (gray)
-			// 2. Slice markers (yellow)
-			// 3. Current slice region (white)
-			// 4. Playhead position (red)
-			
+			// 2. Current slice region (white)
+			// 3. Playhead position (red)
+			// 4. Slice markers (yellow/cyan) - ALWAYS visible on top
+
 			color := colorGray // Default: gray waveform
-			
-			// Check if this is a slice marker
-			if x == selectedMarkerPos {
-				color = colorCyan
-			} else if markerPositions[x] {
-				color = colorYellow
-			}
-			
-			// Check if within current slice region (override slice markers)
+
+			// Check if within current slice region
 			if showPlayhead && playheadSliceStartX >= 0 && playheadSliceEndX >= 0 {
 				if x >= playheadSliceStartX && x <= playheadSliceEndX {
 					color = colorWhite
 				}
 			}
-			
-			// Check if this is the playhead position (highest priority)
+
+			// Check if this is the playhead position
 			if showPlayhead && x == playheadPosX {
 				color = colorRed
+			}
+
+			// Check if this is a slice marker (HIGHEST priority - always visible)
+			if x == selectedMarkerPos {
+				color = colorCyan
+			} else if markerPositions[x] {
+				color = colorYellow
 			}
 			
 			sb.WriteString(color + char + colorReset)

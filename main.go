@@ -408,6 +408,7 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 			tm.model.PlayheadPos = pos
 			tm.model.PlayheadSliceStart = sliceStart
 			tm.model.PlayheadSliceEnd = sliceEnd
+			tm.model.PlayheadLastUpdate = time.Now()
 		}
 	})
 
