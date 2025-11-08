@@ -202,7 +202,8 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 		saveData.ViewMode == types.SettingsView ||
 		saveData.ViewMode == types.FileMetadataView ||
 		saveData.ViewMode == types.RetriggerView ||
-		saveData.ViewMode == types.TimestrechView {
+		saveData.ViewMode == types.TimestrechView ||
+		saveData.ViewMode == types.WaveformView {
 		saveData.ViewMode = types.PhraseView
 		saveData.CurrentCol = int(types.ColFilename)
 	}
@@ -468,10 +469,17 @@ func createSaveFolder(saveFolder string, samplerFiles []string, fileMetadata map
 			absDest = destPath
 		}
 
-		// If source and destination are the same, skip the copy
+		// If source and destination are the same, skip the copy but still save metadata
 		if absOriginal == absDest {
 			relativePaths[i] = fileName
 			log.Printf("File already in save folder: %s (relative: %s)", originalPath, fileName)
+			// Still need to save metadata even though we're not copying the file
+			if metadata, exists := fileMetadata[originalPath]; exists {
+				err = saveFileMetadata(saveFolder, originalPath, metadata)
+				if err != nil {
+					log.Printf("Warning: Failed to save metadata for %s: %v", originalPath, err)
+				}
+			}
 			continue
 		}
 

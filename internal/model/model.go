@@ -2469,6 +2469,13 @@ func (m *Model) performOnsetDetection(filePath string) {
 
 	log.Printf("Starting onset detection for %s with %d slices", absPath, metadata.Slices)
 
+	// Use waveform file for onset detection if available (works better than FLAC)
+	onsetDetectionFile := absPath
+	if metadata.WaveformFile != "" {
+		onsetDetectionFile = metadata.WaveformFile
+		log.Printf("Using waveform file for onset detection: %s", onsetDetectionFile)
+	}
+
 	// Perform onset detection in a goroutine to avoid blocking
 	go func() {
 		options := onset.SliceAnalyzerOptions{
@@ -2478,7 +2485,7 @@ func (m *Model) performOnsetDetection(filePath string) {
 			OptimizeWindowMs: 15.0,
 		}
 
-		result, err := onset.AnalyzeSlices(absPath, options)
+		result, err := onset.AnalyzeSlices(onsetDetectionFile, options)
 		if err != nil {
 			log.Printf("Onset detection failed for %s: %v", absPath, err)
 			return
