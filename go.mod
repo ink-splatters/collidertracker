@@ -11,8 +11,8 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/lucasb-eyer/go-colorful v1.3.0
 	github.com/muesli/termenv v0.16.0
-	github.com/schollz/gowaveform v0.0.0-20251108145033-254b746fab36
-	github.com/schollz/onsets v0.1.0
+	github.com/schollz/gowaveform v0.1.0
+	github.com/schollz/onsets v0.2.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.3.16
