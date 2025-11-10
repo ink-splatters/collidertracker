@@ -149,7 +149,7 @@ Routine{
     		var ducked;
     		var cutoff = \lowPassFilter.kr(20000);
     		var res = \resonance.kr(0.5).clip(0.1, 3.0);
-    		var freq = \note.kr(60).min(127).max(0).midicps.poll;
+    		var freq = \note.kr(60).min(127).max(0).midicps;
     		var glideFreq = Lag.kr(freq, \glide.kr(0.0).max(0.001));
     		var waveMix = Lag.kr(\mixWave.kr(0.5).clip(0,1));
 
@@ -403,7 +403,7 @@ Routine{
     		effectComb = 0.0, effectCombOut
     		;
     		var snd, ducked;
-    		snd = SoundIn.ar([0,1]) * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
+    		snd = SoundIn.ar([0,1]) * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1) * DC.ar(0); // TODO:remove 0
     		snd = Balance2.ar(snd[0], snd[1], pan);
     		snd = snd * -10.dbamp * trackVolume.dbamp;
 
@@ -490,6 +490,8 @@ Routine{
     			sliceCount = 32, // number of slices to cut the sample into
     			sliceStart = 0.0, // slice start position (0.0-1.0, calculated in Go)
     			sliceEnd = 1.0,   // slice end position (0.0-1.0, calculated in Go)
+				sliceBounce = 0.0,
+				sliceStop = 0.0,
     			trackOut,
     			effectDry = 1.0,
     			effectDryOut,
@@ -508,7 +510,7 @@ Routine{
     			;
     			var snd,sndA,sndB,crossfade,aOrB;
     			var sndDry, sndReverb, sndComb;
-    			var posA,posB,posCur;
+    			var posA,posB,posCur,posCurFeedback,posCurFeedbackLast;
     			var retrigTrig, retrigCount;
     			var frames=BufFrames.ir(buf);
     			var syncBpm=(\synctobpm.ir(0) * bpmTarget/bpmSource) + (1 - \synctobpm.ir(0));
@@ -523,6 +525,8 @@ Routine{
     			var side, atk, rel, depth, slopeAbove, thresh, ducked;
 				var sliceStartOriginal = sliceStart;
 				var sliceEndOriginal = sliceEnd;
+				var localInData;
+				var endToggled;
     			// Position is always provided by Go code (sliceStart and sliceEnd)
     			// Handle reverse playback by swapping start and end
 				
@@ -530,6 +534,7 @@ Routine{
     				sliceStart,  // forward: use start position
     				sliceEnd     // reverse: use end position
     			]);
+
     			// compute seconds left
     			secondsLeft = Select.kr(effectReverse > 0, [
     				(seconds * (1 - pos)), // forward: seconds to end
@@ -566,7 +571,10 @@ Routine{
     			rate = rate * (2 ** (pitch/12.0));
 
     			// Calculate retriggers
-    			retrigCountFeedback = LocalIn.ar(1);
+    			localInData = LocalIn.ar(3);
+				retrigCountFeedback = localInData[0];
+				posCurFeedback = localInData[1];
+				posCurFeedbackLast = localInData[2];
     			retrigTrig = Impulse.ar(XLine.ar(retrigRateStart,retrigRateEnd,beatDuration*retrigRateChangeBeats) / beatDuration);
     			retrigCount = PulseCount.ar(retrigTrig * (retrigCountFeedback<retrigNumTotal));
     			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNumTotal));
@@ -581,6 +589,17 @@ Routine{
     				rate,
     				rate * -1,
     			]);
+
+				endToggled = ToggleFF.kr(
+					((posCurFeedback > (sliceEndOriginal - 0.001)) * (posCurFeedbackLast <= (sliceEndOriginal - 0.001)))
+					+
+					((posCurFeedback < (sliceStartOriginal + 0.001)) * (posCurFeedbackLast >= (sliceStartOriginal + 0.001)))
+				);
+				// bounce if end toggled
+				rate = rate * Select.kr(endToggled * sliceBounce,[1.0,-1.0]);
+				gate = gate * Select.kr(endToggled * (1 - sliceBounce),[1,0]);
+				
+
 
     			// Change volume based on retrigger
     			volumeDB = volumeDB + (A2K.kr(retrigCount) * retrigVolumeChange) + (retrigVolumeChange.neg * retrigNumTotal * finalVolumeToStart);
@@ -627,7 +646,7 @@ Routine{
     					EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger))
     					// playthrough = 1, playthrough mode
     					+ (\playthrough.ir(0) *
-    					EnvGen.ar(Env.new([0,1,1,0],[0.001,secondsLeft.poll-(0.005),0.001],[-4,4]), 1, doneAction:2 * \playthrough.ir(0))
+    					EnvGen.ar(Env.new([0,1,1,0],[0.001,secondsLeft-(0.005),0.001],[-4,4]), 1, doneAction:2 * \playthrough.ir(0))
     					)
     				);
 
@@ -688,7 +707,7 @@ Routine{
 				]);
 
     			// Feedback
-    			LocalOut.ar(retrigCount);
+    			LocalOut.ar([retrigCount,posCur, posCurFeedback]);
     			Out.ar(trackOut, snd*(1.0 - effectReverb));
     			Out.ar(effectDryOut, snd*effectDry);
     			Out.ar(effectCombOut, snd*XLine.kr(0.001,effectComb,sliceDurationBeats*beatDuration/2));
@@ -1024,6 +1043,10 @@ Routine{
     	OSCFunc({ |msg|
     		var filename = msg[1];
     		msg.postln;
+			// log every key/value pair
+			msg.do({ |v,i|
+				[i,v].postln;
+			});
     		if (~sampleCache.at(filename).isNil,{
     			// load sample
     			~sampleCache.put(filename, Buffer.read(s,filename,action:{ |b|
@@ -1142,7 +1165,7 @@ Routine{
     		NetAddr.new("127.0.0.1", 57121).sendMsg("/waveform", msg[3]);
     	},'/waveform');
 		OSCFunc({ |msg|
-			NetAddr.new("127.0.0.1", 57121).sendMsg("/sampler_playhead", *msg[3..]);
+			NetAddr.new("127.0.0.1", 57121).sendMsg("/sampler_playhead", *msg[3..].postln);
 		},'/sampler_playhead');
     	OSCFunc({ |msg|
     		NetAddr.new("127.0.0.1", 57121).sendMsg("/track_volume", *msg[3..]);
@@ -1259,53 +1282,63 @@ Routine{
     	}.play;
 
 
-    	// ~bpmTarget = 180;
-    	// ~sliceNum = 32;
-    	// Routine {
-    	// 	inf.do({ arg beat;
-    	// 		var sliceNum = beat.mod(~sliceNum);
-    	// 		["playing",beat].postln;
-    	// 		NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/sampler", "amen_5c2d11c8_beats16_bpm170.flac",
-    	// 			\sliceCount, 32,
-    	// 			\sliceNum, sliceNum,
-    	// 			\sliceDurationBeats, 100,
-    	// 			\bpmSource, 170,
-    	// 			\bpmTarget, ~bpmTarget,
-    	// 			\effectTimestretchStart, 3.rand,
-    	// 			\effectTimestretchEnd, 8.rand,
-    	// 			\effectTimestretchBeats, 8.rand,
-    	// 			\retrigNumTotal, 16.rand,
-    	// 			\retrigRateStart, 16.rand,
-    	// 			\retrigPitchChange,-1,
-    	// 			\retrigVolumeChange,-2,
-    	// 			\effectComb, (100.rand)/100.0,
-    	// 		);
-
-    	// 		(60/~bpmTarget/2).wait;
-    	// 	});
-    	// }.play;
-    	// Routine {
-    	// 	NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/instrument",0,1,60.1,63.9,67,"duration",2,"attack",1,"release",2);
-    	// }.play;
 
     	//Server.default.record;
     	["playing startupSound"].postln;
     	// Synth.head(Server.default,"startupSound",[\out,~busDry]);
-    	[48,64,67,72].do({ |n|
-    		Synth.head(Server.default,"SuperSaw",[
-    			\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
-    			\attack, 3.0,
-    			\release, 3.0,
-    			\sustain, 1.0,
-    			\effectReverb, 0.3,
-    			\lowPassFilter, 200,
-    			\lpa, 1,
-    			\lpenv, 7.0,
-    			\drive, 1.0,
-    			\noteSize, 4,
-    			\trackVolume, -12,
-    		]);
-    	});
+    	// [48,64,67,72].do({ |n|
+    	// 	Synth.head(Server.default,"SuperSaw",[
+    	// 		\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
+    	// 		\attack, 3.0,
+    	// 		\release, 3.0,
+    	// 		\sustain, 1.0,
+    	// 		\effectReverb, 0.3,
+    	// 		\lowPassFilter, 200,
+    	// 		\lpa, 1,
+    	// 		\lpenv, 7.0,
+    	// 		\drive, 1.0,
+    	// 		\noteSize, 4,
+    	// 		\trackVolume, -12,
+    	// 	]);
+    	// });
+
+
+		NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
+			"/sampler",
+			"/home/zns/Documents/collidertracker/beat_bpm174.wav",
+			0,
+			\trackVolume, 12.0,
+			\sliceCount, 64,
+			\bpmSource, 175.0,
+			\bpmTarget, 171.0,
+			\pitch, 0.0,
+			\retrigNumTotal, 0,
+			\retrigRateChangeBeats, 0.0,
+			\retrigRateStart, 0.0,
+			\retrigRateEnd, 0.0,
+			\retrigPitchChange, 0.0,
+			\retrigVolumeChange, 0.0,
+			\finalPitchToStart, 0,
+			\finalVolumeToStart, 0,
+			\effectTimestretchStart, 0.0,
+			\effectTimestretchEnd, 0.0,
+			\effectTimestretchBeats, 0.0,
+			\effectReverse, 0,
+			\pan, 0.0,
+			\lowPassFilter, 20000.0,
+			\highPassFilter, 20.0,
+			\effectComb, 0.0,
+			\effectReverb, 0.0,
+			\velocity, 64,
+			\deltaTime, 0.17543859779835,
+			\playthrough, 0,
+			\synctobpm, 1,
+			\sliceDurationBeats, 32,
+			\sliceStart, 0,
+			\sliceEnd, 0.125,
+			\sliceBounce, 0,
+			\sliceStop, 1,
+		);
 
     }.play;
 
