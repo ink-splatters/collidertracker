@@ -1000,6 +1000,102 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 		},
 	},
+	"MollyThePoly": {
+		Name:        "MollyThePoly",
+		Description: "Classic polysynth with Juno-6 voice structure",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "oscWaveShape", DisplayName: "Osc Shape", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 2, DefaultValue: 1, Default: 1, Column: 0, Order: 0,
+				DisplayFormatter: FormatOscWaveShape,
+			},
+			{
+				Key: "pwMod", DisplayName: "PWM Amount", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.4, Default: 0.4, Column: 0, Order: 1,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "pwModSource", DisplayName: "PWM Source", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 2, DefaultValue: 0, Default: 0, Column: 0, Order: 2,
+				DisplayFormatter: FormatPwmSource,
+			},
+			{
+				Key: "mainOscLevel", DisplayName: "Main Osc", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 1.0, Default: 1.0, Column: 0, Order: 3,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "subOscLevel", DisplayName: "Sub Osc", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.2, Default: 0.2, Column: 0, Order: 4,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "subOscDetune", DisplayName: "Detune", Type: ParameterTypeFloat,
+				MinValue: -5.0, MaxValue: 5.0, DefaultValue: 0.0, Default: 0.0, Column: 0, Order: 5,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f ST",
+			},
+			{
+				Key: "noiseLevel", DisplayName: "Noise", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 0, Order: 6,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "lpFilterResonance", DisplayName: "Resonance", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.4, Default: 0.4, Column: 0, Order: 7,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "lpFilterCutoffModEnv", DisplayName: "Filter Env", Type: ParameterTypeFloat,
+				MinValue: -1.0, MaxValue: 1.0, DefaultValue: 0.6, Default: 0.6, Column: 0, Order: 8,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "lpFilterCutoffModLfo", DisplayName: "Filter LFO", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 1, Order: 0,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "lpFilterTracking", DisplayName: "Key Track", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 2.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 1,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f:1",
+			},
+			{
+				Key: "lfoFreq", DisplayName: "LFO Rate", Type: ParameterTypeFloat,
+				MinValue: 0.1, MaxValue: 20.0, DefaultValue: 5.0, Default: 5.0, Column: 1, Order: 2,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f Hz",
+			},
+			{
+				Key: "lfoWaveShape", DisplayName: "LFO Shape", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 4, DefaultValue: 0, Default: 0, Column: 1, Order: 3,
+				DisplayFormatter: FormatLfoWaveShape,
+			},
+			{
+				Key: "ampMod", DisplayName: "Amp Mod", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 1, Order: 4,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "timbre", DisplayName: "Timbre", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 1, Order: 5,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "ringModMix", DisplayName: "Ring Mod", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 1, Order: 6,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "chorusMix", DisplayName: "Chorus", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 7,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 8,
+				DisplayFormatter: FormatYesNo,
+			},
+		},
+	},
 }
 
 // Helper functions for the instrument framework
@@ -1010,6 +1106,52 @@ func FormatYesNo(value float32) string {
 		return "No"
 	}
 	return "Yes"
+}
+
+// FormatOscWaveShape formats oscillator waveform selection
+func FormatOscWaveShape(value float32) string {
+	switch int(value) {
+	case 0:
+		return "VarSaw"
+	case 1:
+		return "Saw"
+	case 2:
+		return "Pulse"
+	default:
+		return "Unknown"
+	}
+}
+
+// FormatLfoWaveShape formats LFO waveform selection
+func FormatLfoWaveShape(value float32) string {
+	switch int(value) {
+	case 0:
+		return "Sine"
+	case 1:
+		return "Triangle"
+	case 2:
+		return "Saw"
+	case 3:
+		return "Pulse"
+	case 4:
+		return "Random"
+	default:
+		return "Unknown"
+	}
+}
+
+// FormatPwmSource formats PWM modulation source selection
+func FormatPwmSource(value float32) string {
+	switch int(value) {
+	case 0:
+		return "LFO"
+	case 1:
+		return "Env"
+	case 2:
+		return "Manual"
+	default:
+		return "Unknown"
+	}
 }
 
 // GetInstrumentDefinition returns the definition for a given instrument name
