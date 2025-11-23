@@ -434,7 +434,7 @@ Routine{
     		);
 
     		// Filter parameters
-    		var hpFilterCutoff = \hpFilterCutoff.kr(10);
+    		var hpFilterCutoff = \highPassFilter.kr(10);
     		var lpFilterType = \lpFilterType.kr(0);
     		var lpFilterCutoff = \lowPassFilter.kr(440);
     		var lpFilterResonance = \lpFilterResonance.kr(0.2);
