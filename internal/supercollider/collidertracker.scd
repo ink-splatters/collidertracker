@@ -421,6 +421,17 @@ Routine{
     		var subOscLevel = \subOscLevel.kr(0);
     		var subOscDetune = \subOscDetune.kr(0);
     		var noiseLevel = \noiseLevel.kr(0);
+			// main env
+			var env = EnvGen.ar(
+    			Env.adsr(
+    				\attack.kr(0.1),
+    				\decay.kr(1.0),
+    				\sustain.kr(0.7),
+    				\release.kr(0.5)
+    			),
+    			1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+    			doneAction:2,
+    		);
 
     		// Filter parameters
     		var hpFilterCutoff = \hpFilterCutoff.kr(10);
@@ -539,7 +550,7 @@ Routine{
     		signal = SelectX.ar(lpFilterType, [signal, RLPF.ar(in: signal, freq: lpFilterCutoff, rq: lpFilterResonance.linexp(0, 1, 1, 0.32))]);
 
     		// Amp
-    		signal = signal * envelope2;
+    		signal = signal * envelope2 * env;
     		signal = signal * vel * lfo.range(1 - ampMod, 1);
     		// signal = signal * (1 + (channelPressure * 1.15));
 
