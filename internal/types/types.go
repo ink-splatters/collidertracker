@@ -1096,6 +1096,92 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 		},
 	},
+	"Juno60": {
+		Name:        "Juno60",
+		Description: "Roland Juno-60 analog polysynth with chorus",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "oscSaw", DisplayName: "Sawtooth", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.8, Default: 0.8, Column: 0, Order: 0,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "oscPulse", DisplayName: "Pulse", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.5, Default: 0.5, Column: 0, Order: 1,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "oscSub", DisplayName: "Sub Osc", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.3, Default: 0.3, Column: 0, Order: 2,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "oscNoise", DisplayName: "Noise", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 0, Order: 3,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "oscPwm", DisplayName: "PWM", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.5, Default: 0.5, Column: 0, Order: 4,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "resonance", DisplayName: "Resonance", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.4, Default: 0.4, Column: 0, Order: 5,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "envMod", DisplayName: "Env Mod", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.6, Default: 0.6, Column: 0, Order: 6,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "vcfKey", DisplayName: "VCF Key", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.5, Default: 0.5, Column: 0, Order: 7,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "lfoRate", DisplayName: "LFO Rate", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.5, Default: 0.5, Column: 1, Order: 0,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "lfoDelay", DisplayName: "LFO Delay", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 1, Order: 1,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "dcoLfo", DisplayName: "DCO LFO", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 1, Order: 2,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "vcfLfo", DisplayName: "VCF LFO", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 1, Order: 3,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "dcoRange", DisplayName: "DCO Range", Type: ParameterTypeFloat,
+				MinValue: 0.5, MaxValue: 2.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 4,
+				CoarseStep: 0.5, FineStep: 0.1, DisplayFormat: "%.1f",
+			},
+			{
+				Key: "lfoAuto", DisplayName: "LFO Auto", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 5,
+				DisplayFormatter: FormatYesNo,
+			},
+			{
+				Key: "junoChorus", DisplayName: "Chorus", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 6, DefaultValue: 3, Default: 3, Column: 1, Order: 6,
+				DisplayFormatter: FormatJunoChorus,
+			},
+			{
+				Key: "chorusDryWet", DisplayName: "Chorus Mix", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.5, Default: 0.5, Column: 1, Order: 7,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+		},
+	},
 }
 
 // Helper functions for the instrument framework
@@ -1149,6 +1235,28 @@ func FormatPwmSource(value float32) string {
 		return "Env"
 	case 2:
 		return "Manual"
+	default:
+		return "Unknown"
+	}
+}
+
+// FormatJunoChorus formats Juno-60 chorus mode selection
+func FormatJunoChorus(value float32) string {
+	switch int(value) {
+	case 0:
+		return "Off"
+	case 1:
+		return "I"
+	case 2:
+		return "II"
+	case 3:
+		return "I+II"
+	case 4:
+		return "I(junologue)"
+	case 5:
+		return "I-II(junologue)"
+	case 6:
+		return "II(junologue)"
 	default:
 		return "Unknown"
 	}

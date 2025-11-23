@@ -403,7 +403,7 @@ Routine{
 				decay: \decay.kr(1.0),
 				sustain: \sustain.kr(0.7),
 				release: \release.kr(0.5),
-				cutoff: \lowPassFilter.kr(440).explin(10,10000,0.0001,1),  // Control cutoff with mouse Y position
+				cutoff: \lowPassFilter.kr(440).explin(100,20000,0.001,1).min(1.0).max(0.0),  // Control cutoff with mouse Y position
 				resonance: \resonance.kr(0.1),
 				envMod: \envMod.kr(0.1),  // Control envelope modulation with mouse X position
 				saw: \oscSaw.kr(0.5),
@@ -415,18 +415,20 @@ Routine{
 				chorusDrywet:  \chorusDrywet.kr(0.5),
 				lfoRate: \lfoRate.kr(0.3),
 				lfoDelay: \lfoDelay.kr(0.2),
-				lfoAuto: \lfoAuto.kr(0),
+				lfoAuto: 1.0, // LFO auto-triggers and resets its phase when a note  is played
 				dcoLfo: \dcoLfo.kr(0.05),
-				dcoPwmMod: \dcoPwmMod.kr(1),
+				dcoPwmMod: 1.0,
 				dcoRange: \dcoRange.kr(1.0), // 1.0 = same pitch, 0.5 = one octave down, 2.0 = one octave up
-				hpf: \highPassFilter.kr(10).explin(10,20000,0.0001,1),
+				hpf: \highPassFilter.kr(100).explin(10,20000,0.0001,1).min(1.0).max(0.0),  // Control high-pass filter with mouse Y position
 				vcfLfo: \vcfLfo.kr(0.05),
 				vcfKey: \vcfKey.kr(0.5),
 				vcfDir: \vcfDir.kr(1),
-				vcaType: \vcaType.kr(0.0),
-				vcaValue: \vcaValue.kr(0.0),
+				vcaType: 0.0, // 0 = envelope, 1 = gate
+				vcaValue: 1.0,
 				doneAction: 2
 			);
+
+			snd = Balance2.ar(snd[0],snd[1],\pan.kr(0));
 
 			snd = snd * 4.0 * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
 				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
@@ -1591,33 +1593,33 @@ Routine{
     	// 		\trackVolume, -12,
     	// 	]);
     	// });
-    	[48,64,67,72].do({ |n|
-    		Synth.head(Server.default,"Juno60",[
-    			\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
-    			\attack, 3.0,
-    			\release, 3.0,
-    			\sustain, 1.0,
-    			\effectReverb, 0.3,
-    			\lowPassFilter, 300,
-				\envMod, 0.1,
-				\oscSaw, 1.0,
-				\oscPulse, 0.1,
-				\oscSub, 0.5,
-				\oscNoise, 0.3,
-				\oscPwm, 0.0,
-				\junoChorus, 4,
-				\chorusDrywet, 1.0,
-				\lfoRate, 0.3,
-				\lfoDelay, 0.2,
-				\lfoAuto, 0,
-				\dcoLfo, 0.5,
-				\dcoPwmMod, 1,
-				\dcoRange, 1.0,
-				\highPassFilter, 10,
-    			\noteSize, 4,
-    			\trackVolume, -12,
-    		]);
-    	});
+    	// [48,64,67,72].do({ |n|
+    	// 	Synth.head(Server.default,"Juno60",[
+    	// 		\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
+    	// 		\attack, 3.0,
+    	// 		\release, 3.0,
+    	// 		\sustain, 1.0,
+    	// 		\effectReverb, 0.3,
+    	// 		\lowPassFilter, 300,
+		// 		\envMod, 0.1,
+		// 		\oscSaw, 1.0,
+		// 		\oscPulse, 0.1,
+		// 		\oscSub, 0.5,
+		// 		\oscNoise, 0.3,
+		// 		\oscPwm, 0.0,
+		// 		\junoChorus, 4,
+		// 		\chorusDrywet, 1.0,
+		// 		\lfoRate, 0.3,
+		// 		\lfoDelay, 0.2,
+		// 		\lfoAuto, 0,
+		// 		\dcoLfo, 0.0,
+		// 		\dcoPwmMod, 1,
+		// 		\dcoRange, 1.0,
+		// 		\highPassFilter, 10,
+    	// 		\noteSize, 4,
+    	// 		\trackVolume, -12,
+    	// 	]);
+    	// });
 
 
 		// NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
