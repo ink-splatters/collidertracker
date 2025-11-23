@@ -392,6 +392,210 @@ Routine{
     		Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
     	}).add;
 
+    	SynthDef("MollyThePoly",{
+    		arg gate = 1;
+    		var ducked;
+    		var i_nyquist = SampleRate.ir * 0.5, i_cFreq = 48.midicps, signal, controlLag = 0.005;
+    		var lfo, ringMod, oscArray, freqModRatio, mainOscDriftLfo, subOscDriftLfo, filterCutoffRatio, filterCutoffModRatio;
+    		var envelope1, envelope2;
+    		var freq = \note.kr(60).min(127).max(0).midicps;
+    		var vel = \velocity.kr(100).min(127).max(0).linlin(0,127,0.3,1);
+
+    		// LFO parameters
+    		var lfoFreq = \lfoFreq.kr(5);
+    		var lfoWaveShape = \lfoWaveShape.kr(0);
+    		var lfoFade = \lfoFade.kr(0);
+    		var ringModFreq = \ringModFreq.kr(50);
+    		var ringModFade = \ringModFade.kr(0);
+    		var ringModMix = \ringModMix.kr(0);
+
+    		// Oscillator parameters
+    		var oscWaveShape = \oscWaveShape.kr(0);
+    		var pwMod = \pwMod.kr(0);
+    		var pwModSource = \pwModSource.kr(0);
+    		var freqModLfo = \freqModLfo.kr(0);
+    		var freqModEnv = \freqModEnv.kr(0);
+    		var lastFreq = \lastFreq.kr(0);
+    		var glide = \glide.kr(0);
+    		var mainOscLevel = \mainOscLevel.kr(1);
+    		var subOscLevel = \subOscLevel.kr(0);
+    		var subOscDetune = \subOscDetune.kr(0);
+    		var noiseLevel = \noiseLevel.kr(0);
+
+    		// Filter parameters
+    		var hpFilterCutoff = \hpFilterCutoff.kr(10);
+    		var lpFilterType = \lpFilterType.kr(0);
+    		var lpFilterCutoff = \lowPassFilter.kr(440);
+    		var lpFilterResonance = \lpFilterResonance.kr(0.2);
+    		var lpFilterCutoffEnvSelect = \lpFilterCutoffEnvSelect.kr(0);
+    		var lpFilterCutoffModEnv = \lpFilterCutoffModEnv.kr(0);
+    		var lpFilterCutoffModLfo = \lpFilterCutoffModLfo.kr(0);
+    		var lpFilterTracking = \lpFilterTracking.kr(1);
+
+    		// Envelope parameters
+    		var env1Attack = \env1Attack.kr(0.01);
+    		var env1Decay = \env1Decay.kr(0.3);
+    		var env1Sustain = \env1Sustain.kr(0.5);
+    		var env1Release = \env1Release.kr(0.5);
+    		var env2Attack = \env2Attack.kr(0.01);
+    		var env2Decay = \env2Decay.kr(0.3);
+    		var env2Sustain = \env2Sustain.kr(0.5);
+    		var env2Release = \env2Release.kr(0.5);
+
+    		// Modulation parameters
+    		var ampMod = \ampMod.kr(0);
+    		var channelPressure = \channelPressure.kr(0);
+    		var timbre = \timbre.kr(0);
+    		var chorusMix = \chorusMix.kr(0);
+
+    		// LFO generation (local)
+    		var lfoOscArray = [
+    			SinOsc.kr(lfoFreq),
+    			LFTri.kr(lfoFreq),
+    			LFSaw.kr(lfoFreq),
+    			LFPulse.kr(lfoFreq, mul: 2, add: -1),
+    			LFNoise0.kr(lfoFreq)
+    		];
+    		lfo = Select.kr(lfoWaveShape, lfoOscArray);
+    		lfo = Lag.kr(lfo, 0.005);
+    		lfo = Line.kr(start: (lfoFade < 0), end: (lfoFade >= 0), dur: lfoFade.abs, mul: lfo);
+
+    		// Ring mod generation (local)
+    		ringMod = SinOsc.ar(ringModFreq);
+    		ringMod = Line.kr(start: (ringModFade < 0), end: (ringModFade >= 0), dur: ringModFade.abs, mul: ringMod);
+
+    		// Lag and map inputs
+    		freq = XLine.kr(start: lastFreq.max(20), end: freq, dur: glide + 0.001);
+    		channelPressure = Lag.kr(channelPressure, controlLag);
+
+    		pwMod = Lag.kr(pwMod, controlLag);
+    		mainOscLevel = Lag.kr(mainOscLevel, controlLag);
+    		subOscLevel = Lag.kr(subOscLevel, controlLag);
+    		subOscDetune = Lag.kr(subOscDetune, controlLag);
+    		noiseLevel = Lag.kr(noiseLevel, controlLag);
+
+    		hpFilterCutoff = Lag.kr(hpFilterCutoff, controlLag);
+    		lpFilterCutoff = Lag.kr(lpFilterCutoff, controlLag);
+    		lpFilterResonance = Lag.kr(lpFilterResonance, controlLag);
+    		lpFilterType = Lag.kr(lpFilterType, 0.01);
+
+    		ringModMix = Lag.kr((ringModMix + timbre).clip, controlLag);
+
+    		// Envelopes
+    		envelope1 = EnvGen.ar(envelope: Env.adsr(env1Attack, env1Decay, env1Sustain, env1Release), gate: gate);
+    		envelope2 = EnvGen.ar(envelope: Env.adsr(env2Attack, env2Decay, env2Sustain, env2Release), gate: gate, doneAction: Done.freeSelf);
+
+    		// Main osc
+    		freqModRatio = ((lfo * freqModLfo) + (envelope1 * freqModEnv));
+    		freqModRatio = Select.ar(freqModRatio >= 0, [
+    			freqModRatio.linlin(-2, 0, 0.25, 1),
+    			freqModRatio.linlin(0, 2, 1, 4)
+    		]);
+    		freq = (freq * freqModRatio).clip(20, i_nyquist);
+
+    		mainOscDriftLfo = LFNoise2.kr(freq: 0.1, mul: 0.001, add: 1);
+
+    		pwMod = Select.kr(pwModSource, [lfo.range(0, pwMod), envelope1 * pwMod, pwMod]);
+
+    		oscArray = [
+    			VarSaw.ar(freq * mainOscDriftLfo),
+    			Saw.ar(freq * mainOscDriftLfo),
+    			Pulse.ar(freq * mainOscDriftLfo, width: 0.5 + (pwMod * 0.49)),
+    		];
+    		signal = Select.ar(oscWaveShape, oscArray) * mainOscLevel;
+
+    		// Sub osc and noise
+    		subOscDriftLfo = LFNoise2.kr(freq: 0.1, mul: 0.0008, add: 1);
+    		signal = SelectX.ar(subOscLevel * 0.5, [signal, Pulse.ar(freq * 0.5 * subOscDetune.midiratio * subOscDriftLfo, width: 0.5)]);
+    		signal = SelectX.ar(noiseLevel * 0.5, [signal, WhiteNoise.ar()]);
+    		signal = signal + PinkNoise.ar(0.007);
+
+    		// HP Filter
+    		filterCutoffRatio = Select.kr((freq < i_cFreq), [
+    			i_cFreq + (freq - i_cFreq),
+    			i_cFreq - (i_cFreq - freq)
+    		]);
+    		filterCutoffRatio = filterCutoffRatio / i_cFreq;
+    		hpFilterCutoff = (hpFilterCutoff * filterCutoffRatio).clip(10, 20000);
+    		signal = HPF.ar(in: signal, freq: hpFilterCutoff);
+
+    		// LP Filter
+    		filterCutoffRatio = Select.kr((freq < i_cFreq), [
+    			i_cFreq + ((freq - i_cFreq) * lpFilterTracking),
+    			i_cFreq - ((i_cFreq - freq) * lpFilterTracking)
+    		]);
+    		filterCutoffRatio = filterCutoffRatio / i_cFreq;
+    		lpFilterCutoff = lpFilterCutoff * (1 + (channelPressure * 0.55));
+    		lpFilterCutoff = lpFilterCutoff * filterCutoffRatio;
+
+    		filterCutoffModRatio = ((lfo * lpFilterCutoffModLfo) + ((Select.ar(lpFilterCutoffEnvSelect, [envelope1, envelope2]) * lpFilterCutoffModEnv) * 2));
+    		filterCutoffModRatio = Select.ar(filterCutoffModRatio >= 0, [
+    			filterCutoffModRatio.linlin(-3, 0, 0.08333333333, 1),
+    			filterCutoffModRatio.linlin(0, 3, 1, 12)
+    		]);
+    		lpFilterCutoff = (lpFilterCutoff * filterCutoffModRatio).clip(20, 20000);
+
+    		signal = RLPF.ar(in: signal, freq: lpFilterCutoff, rq: lpFilterResonance.linexp(0, 1, 1, 0.05));
+    		signal = SelectX.ar(lpFilterType, [signal, RLPF.ar(in: signal, freq: lpFilterCutoff, rq: lpFilterResonance.linexp(0, 1, 1, 0.32))]);
+
+    		// Amp
+    		signal = signal * envelope2;
+    		signal = signal * vel * lfo.range(1 - ampMod, 1);
+    		// signal = signal * (1 + (channelPressure * 1.15));
+
+    		// Ring mod
+    		signal = SelectX.ar(ringModMix * 0.5, [signal, signal * ringMod]);
+
+    		// Apply chorus (simplified in-place version)
+    		chorusMix = Lag.kr(chorusMix, controlLag);
+    		signal = {
+    			var chorusPreProcess, chorusLfo, chorusPreDelay = 0.01, chorusDepth = 0.0053, chorusDelay, chorus;
+    			chorusPreProcess = signal + (signal * WhiteNoise.ar(0.004));
+    			chorusLfo = LFPar.kr(chorusMix.linlin(0.7, 1, 0.5, 0.75));
+    			chorusDelay = chorusPreDelay + chorusMix.linlin(0.5, 1, chorusDepth, chorusDepth * 0.75);
+    			chorus = DelayC.ar(in: chorusPreProcess, maxdelaytime: chorusPreDelay + chorusDepth, delaytime: chorusLfo.range(chorusPreDelay, chorusDelay));
+    			chorus = LPF.ar(chorus, 14000);
+    			SelectX.ar(chorusMix * 0.5, [signal, chorus]);
+    		}.value;
+
+    		// Bass boost and compression (from mixer section)
+    		signal = BLowShelf.ar(signal, freq: 400, rs: 1, db: 2, mul: 1, add: 0);
+    		signal = LPF.ar(in: signal, freq: 14000);
+    		signal = CompanderD.ar(in: signal, thresh: 0.4, slopeBelow: 1, slopeAbove: 0.25, clampTime: 0.002, relaxTime: 0.01);
+    		signal = tanh(signal).softclip;
+
+    		// Apply collidertracker features
+    		signal = signal * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+
+    		// check if signal is ducked
+    		ducked = Compander.ar(
+    			in:         signal,
+    			control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),
+    			thresh:     \duckingThresh.kr(0.02),
+    			slopeBelow: 1,
+    			slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+    			clampTime:  \duckingAttack.kr(0.02),
+    			relaxTime:  \duckingRelease.kr(0.20)
+    		);
+    		signal = Select.ar(\duckingType.kr(0),
+    			[signal, signal, ducked]
+    		);
+    		signal = signal + (1e-6 * WhiteNoise.ar(1));
+    		Out.ar(\duckingBusOut.kr(0),
+    			signal * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
+    				0,
+    				1,
+    				0
+    			])
+    		);
+
+    		signal = Pan2.ar(signal, \pan.kr(0));
+    		Out.ar(\trackOut.kr(0), signal*(1.0 - \effectReverb.kr(0)));
+    		Out.ar(\effectDryOut.kr(0), signal*(1.0 - \effectReverb.kr(0)));
+    		Out.ar(\effectCombOut.kr(0), signal*\effectComb.kr(0));
+    		Out.ar(\effectReverbOut.kr(0), signal*\effectReverb.kr(0));
+    	}).add;
+
     	SynthDef("externalInput", {
     		arg trackId,
     		trackVolume = 0,
@@ -1286,59 +1490,59 @@ Routine{
     	//Server.default.record;
     	["playing startupSound"].postln;
     	// Synth.head(Server.default,"startupSound",[\out,~busDry]);
-    	// [48,64,67,72].do({ |n|
-    	// 	Synth.head(Server.default,"SuperSaw",[
-    	// 		\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
-    	// 		\attack, 3.0,
-    	// 		\release, 3.0,
-    	// 		\sustain, 1.0,
-    	// 		\effectReverb, 0.3,
-    	// 		\lowPassFilter, 200,
-    	// 		\lpa, 1,
-    	// 		\lpenv, 7.0,
-    	// 		\drive, 1.0,
-    	// 		\noteSize, 4,
-    	// 		\trackVolume, -12,
-    	// 	]);
-    	// });
+    	[48,64,67,72].do({ |n|
+    		Synth.head(Server.default,"SuperSaw",[
+    			\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
+    			\attack, 3.0,
+    			\release, 3.0,
+    			\sustain, 1.0,
+    			\effectReverb, 0.3,
+    			\lowPassFilter, 2000,
+    			\lpa, 1,
+    			\lpenv, 7.0,
+    			\drive, 1.0,
+    			\noteSize, 4,
+    			\trackVolume, -12,
+    		]);
+    	});
 
 
-		NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
-			"/sampler",
-			"/home/zns/Documents/collidertracker/beat_bpm174.wav",
-			0,
-			\trackVolume, 12.0,
-			\sliceCount, 64,
-			\bpmSource, 175.0,
-			\bpmTarget, 171.0,
-			\pitch, 0.0,
-			\retrigNumTotal, 0,
-			\retrigRateChangeBeats, 0.0,
-			\retrigRateStart, 0.0,
-			\retrigRateEnd, 0.0,
-			\retrigPitchChange, 0.0,
-			\retrigVolumeChange, 0.0,
-			\finalPitchToStart, 0,
-			\finalVolumeToStart, 0,
-			\effectTimestretchStart, 0.0,
-			\effectTimestretchEnd, 0.0,
-			\effectTimestretchBeats, 0.0,
-			\effectReverse, 0,
-			\pan, 0.0,
-			\lowPassFilter, 20000.0,
-			\highPassFilter, 20.0,
-			\effectComb, 0.0,
-			\effectReverb, 0.0,
-			\velocity, 64,
-			\deltaTime, 0.17543859779835,
-			\playthrough, 0,
-			\synctobpm, 1,
-			\sliceDurationBeats, 32,
-			\sliceStart, 0,
-			\sliceEnd, 0.125,
-			\sliceBounce, 0,
-			\sliceStop, 1,
-		);
+		// NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
+		// 	"/sampler",
+		// 	"/home/zns/Documents/collidertracker/beat_bpm174.wav",
+		// 	0,
+		// 	\trackVolume, 12.0,
+		// 	\sliceCount, 64,
+		// 	\bpmSource, 175.0,
+		// 	\bpmTarget, 171.0,
+		// 	\pitch, 0.0,
+		// 	\retrigNumTotal, 0,
+		// 	\retrigRateChangeBeats, 0.0,
+		// 	\retrigRateStart, 0.0,
+		// 	\retrigRateEnd, 0.0,
+		// 	\retrigPitchChange, 0.0,
+		// 	\retrigVolumeChange, 0.0,
+		// 	\finalPitchToStart, 0,
+		// 	\finalVolumeToStart, 0,
+		// 	\effectTimestretchStart, 0.0,
+		// 	\effectTimestretchEnd, 0.0,
+		// 	\effectTimestretchBeats, 0.0,
+		// 	\effectReverse, 0,
+		// 	\pan, 0.0,
+		// 	\lowPassFilter, 20000.0,
+		// 	\highPassFilter, 20.0,
+		// 	\effectComb, 0.0,
+		// 	\effectReverb, 0.0,
+		// 	\velocity, 64,
+		// 	\deltaTime, 0.17543859779835,
+		// 	\playthrough, 0,
+		// 	\synctobpm, 1,
+		// 	\sliceDurationBeats, 32,
+		// 	\sliceStart, 0,
+		// 	\sliceEnd, 0.125,
+		// 	\sliceBounce, 0,
+		// 	\sliceStop, 1,
+		// );
 
     }.play;
 
