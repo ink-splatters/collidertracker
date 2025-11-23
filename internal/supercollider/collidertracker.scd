@@ -407,7 +407,7 @@ Routine{
 				resonance: \resonance.kr(0.1),
 				envMod: \envMod.kr(0.1),  // Control envelope modulation with mouse X position
 				saw: \oscSaw.kr(0.5),
-				pulse: \oscPulse.kr(0.5),
+				pulse: \oscPulse.kr(0.0),
 				sub: \oscSub.kr(0.5),
 				noise: \oscNoise.kr(0.0),
 				pwm: \oscPwm.kr(0.5),
