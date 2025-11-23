@@ -392,6 +392,81 @@ Routine{
     		Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
     	}).add;
 
+		SynthDef("Juno60",{
+			arg gate = 1;
+			var ducked;
+			var snd =  Juno60.ar(
+				gate: 1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+				note: \note.kr(60),
+				amp: 1.0,
+				attack: \attack.kr(0.1),
+				decay: \decay.kr(1.0),
+				sustain: \sustain.kr(0.7),
+				release: \release.kr(0.5),
+				cutoff: \lowPassFilter.kr(440).explin(10,10000,0.0001,1),  // Control cutoff with mouse Y position
+				resonance: \resonance.kr(0.1),
+				envMod: \envMod.kr(0.1),  // Control envelope modulation with mouse X position
+				saw: \oscSaw.kr(0.5),
+				pulse: \oscPulse.kr(0.5),
+				sub: \oscSub.kr(0.5),
+				noise: \oscNoise.kr(0.0),
+				pwm: \oscPwm.kr(0.5),
+				chorus: \junoChorus.kr(4), // 0 = off, 1, 2, 3, 4, 5, 6 are different chorus types
+				chorusDrywet:  \chorusDrywet.kr(0.5),
+				lfoRate: \lfoRate.kr(0.3),
+				lfoDelay: \lfoDelay.kr(0.2),
+				lfoAuto: \lfoAuto.kr(0),
+				dcoLfo: \dcoLfo.kr(0.05),
+				dcoPwmMod: \dcoPwmMod.kr(1),
+				dcoRange: \dcoRange.kr(1.0), // 1.0 = same pitch, 0.5 = one octave down, 2.0 = one octave up
+				hpf: \highPassFilter.kr(10).explin(10,20000,0.0001,1),
+				vcfLfo: \vcfLfo.kr(0.05),
+				vcfKey: \vcfKey.kr(0.5),
+				vcfDir: \vcfDir.kr(1),
+				vcaType: \vcaType.kr(0.0),
+				vcaValue: \vcaValue.kr(0.0),
+				doneAction: 2
+			);
+
+			snd = snd * 4.0 * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
+				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
+
+
+    		// check if signal is ducked
+    		// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+    		ducked = Compander.ar(
+    			in:         snd,     // signal to be ducked
+    			control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+    			thresh:     \duckingThresh.kr(0.02),  // start reducing above this
+    			slopeBelow: 1,       // unchanged below threshold
+    			slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+    			clampTime:  \duckingAttack.kr(0.02),     // attack
+    			relaxTime:  \duckingRelease.kr(0.20)      // release
+    		);
+    		// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+    		snd = Select.ar(\duckingType.kr(0),
+    			[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+    		);
+    		// tiny floor to avoid denormals at extreme reductions:
+    		snd = snd + (1e-6 * WhiteNoise.ar(1));
+    		Out.ar(\duckingBusOut.kr(0),
+    			Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
+    				0,  // 0 = not ducking
+    				1,  // 1 = is ducking (writer)
+    				0   // 2 = not ducking
+    			])
+    		);
+
+    		snd = Pan2.ar(snd,\pan.kr(0));
+    		Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+    		Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+    		Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
+    		Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
+
+		}).add;
+
+
+
     	SynthDef("MollyThePoly",{
     		arg gate = 1;
     		var ducked;
@@ -1501,17 +1576,44 @@ Routine{
     	//Server.default.record;
     	["playing startupSound"].postln;
     	// Synth.head(Server.default,"startupSound",[\out,~busDry]);
+    	// [48,64,67,72].do({ |n|
+    	// 	Synth.head(Server.default,"SuperSaw",[
+    	// 		\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
+    	// 		\attack, 3.0,
+    	// 		\release, 3.0,
+    	// 		\sustain, 1.0,
+    	// 		\effectReverb, 0.3,
+    	// 		\lowPassFilter, 2000,
+    	// 		\lpa, 1,
+    	// 		\lpenv, 7.0,
+    	// 		\drive, 1.0,
+    	// 		\noteSize, 4,
+    	// 		\trackVolume, -12,
+    	// 	]);
+    	// });
     	[48,64,67,72].do({ |n|
-    		Synth.head(Server.default,"SuperSaw",[
+    		Synth.head(Server.default,"Juno60",[
     			\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
     			\attack, 3.0,
     			\release, 3.0,
     			\sustain, 1.0,
     			\effectReverb, 0.3,
-    			\lowPassFilter, 2000,
-    			\lpa, 1,
-    			\lpenv, 7.0,
-    			\drive, 1.0,
+    			\lowPassFilter, 300,
+				\envMod, 0.1,
+				\oscSaw, 1.0,
+				\oscPulse, 0.1,
+				\oscSub, 0.5,
+				\oscNoise, 0.3,
+				\oscPwm, 0.0,
+				\junoChorus, 4,
+				\chorusDrywet, 1.0,
+				\lfoRate, 0.3,
+				\lfoDelay, 0.2,
+				\lfoAuto, 0,
+				\dcoLfo, 0.5,
+				\dcoPwmMod, 1,
+				\dcoRange, 1.0,
+				\highPassFilter, 10,
     			\noteSize, 4,
     			\trackVolume, -12,
     		]);
