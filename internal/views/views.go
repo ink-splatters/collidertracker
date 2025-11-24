@@ -184,26 +184,26 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 	var highlightPosition int // Position of the highlighted character (0-based)
 	var highlightTopLabel bool // Whether to highlight the top label
 	var highlightBottomLabel bool // Whether to highlight the bottom label
-	
+
 	switch m.ViewMode {
 	case types.SongView:
 		// Song view: O above S, M below S
 		topLabel = "O"
 		bottomLabel = "M"
 		highlightPosition = 0 // S is at position 0
-		
+
 	case types.ChainView:
 		// Chain view: O above C, M below C
 		topLabel = "O"
 		bottomLabel = "M"
 		highlightPosition = 2 // C is at position 2 (S-C)
-		
+
 	case types.PhraseView:
 		// Phrase view: O above P, M below P
 		topLabel = "O"
 		bottomLabel = "M"
 		highlightPosition = 4 // P is at position 4 (S-C-P)
-		
+
 	case types.SettingsView:
 		// Settings (Options) view: O above, S-C-P in middle, M below
 		// Determine position based on PreviousView
@@ -220,7 +220,7 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 		topLabel = "O"
 		bottomLabel = "M"
 		highlightTopLabel = true // Highlight O in Settings view
-		
+
 	case types.MixerView:
 		// Mixer view: O above, S-C-P in middle, M below
 		// Determine position based on PreviousView
@@ -237,26 +237,26 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 		topLabel = "O"
 		bottomLabel = "M"
 		highlightBottomLabel = true // Highlight M in Mixer view
-		
+
 	case types.FileView:
 		// File browser: D above F
 		topLabel = "D"
 		bottomLabel = ""
 		highlightPosition = 6 // F is at position 6 (S-C-P-F)
-		
+
 	case types.FileMetadataView:
 		// File Metadata view: nothing above/below
 		topLabel = ""
 		bottomLabel = ""
 		highlightPosition = 8 // D is at position 8 (S-C-P-F-D)
-		
-	case types.RetriggerView, types.TimestrechView, types.ModulateView, 
+
+	case types.RetriggerView, types.TimestrechView, types.ModulateView,
 		types.ArpeggioView, types.MidiView, types.SoundMakerView, types.DuckingView:
 		// Sub-views from Phrase: O above sub-view, M below
 		topLabel = "O"
 		bottomLabel = "M"
 		highlightPosition = 6 // Sub-view character is at position 6 (S-C-P-X)
-		
+
 	default:
 		topLabel = ""
 		bottomLabel = ""

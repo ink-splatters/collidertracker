@@ -172,14 +172,14 @@ func RenderMixerView(m *model.Model) string {
 		mixerHeader = fmt.Sprintf("Track %d", m.CurrentMixerTrack+1)
 	}
 
+	// Calculate bar height - smaller to fit with waveform
+	barHeight := 8
+	if m.TermHeight > 25 {
+		barHeight = 10
+	}
+
 	return renderViewWithCommonPattern(m, columnHeader, mixerHeader, func(styles *ViewStyles) string {
 		var content strings.Builder
-
-		// Calculate bar height - smaller to fit with waveform
-		barHeight := 8
-		if m.TermHeight > 25 {
-			barHeight = 10
-		}
 
 		// Create vertical bars for all tracks (including Input track at index 8)
 		trackBars := make([][]string, 9)
@@ -247,8 +247,8 @@ func RenderMixerView(m *model.Model) string {
 		} else {
 			content.WriteString(styles.Label.Render(inputSetHex))
 		}
-		content.WriteString("\n\n")
+		content.WriteString("\n")
 
 		return content.String()
-	}, fmt.Sprintf("left/right: select | %s+arrows: adjust", input.GetModifierKey()), getMixerStatusMessage(m), 12)
+	}, fmt.Sprintf("left/right: select | %s+arrows: adjust", input.GetModifierKey()), getMixerStatusMessage(m), barHeight+3)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func RenderSettingsView(m *model.Model) string {
-	return renderViewWithCommonPattern(m, "Preferences ", "", func(styles *ViewStyles) string {
+	return renderViewWithCommonPattern(m, "Options ", "", func(styles *ViewStyles) string {
 		// Column widths
 		const globalColWidth = 18
 		const inputColWidth = 16
@@ -136,5 +136,5 @@ func RenderSettingsView(m *model.Model) string {
 		)
 
 		return content
-	}, fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey()), "", 15)
+	}, fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey()), " ", 15)
 }
