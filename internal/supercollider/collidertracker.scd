@@ -1579,7 +1579,7 @@ Routine{
 
     	//Server.default.record;
     	["playing startupSound"].postln;
-    	// Synth.head(Server.default,"startupSound",[\out,~busDry]);
+    	 Synth.head(Server.default,"startupSound",[\out,~busDry]);
     	// [48,64,67,72].do({ |n|
     	// 	Synth.head(Server.default,"SuperSaw",[
     	// 		\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
