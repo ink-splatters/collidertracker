@@ -887,6 +887,8 @@ Routine{
 					+
 					((posCurFeedback < (sliceStartOriginal + 0.001)) * (posCurFeedbackLast >= (sliceStartOriginal + 0.001)))
 				);
+				// disable endToggled if retrigNumTotal > 0
+				endToggled = endToggled * (1 - (retrigNumTotal>0));
 				// bounce if end toggled
 				rate = rate * Select.kr(endToggled * sliceBounce,[1.0,-1.0]);
 				gate = gate * Select.kr(endToggled * (1 - sliceBounce),[1,0]);
@@ -1622,42 +1624,42 @@ Routine{
     	// });
 
 
-		NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
-			"/sampler",
-			"/home/zns/Documents/collidertracker/beat_bpm174.wav",
-			0,
-			\trackVolume, 12.0,
-			\sliceCount, 64,
-			\bpmSource, 175.0,
-			\bpmTarget, 171.0,
-			\pitch, 0.0,
-			\retrigNumTotal, 4,
-			\retrigRateChangeBeats, 1.0,
-			\retrigRateStart, 8.0,
-			\retrigRateEnd, 8.0,
-			\retrigPitchChange, 0.0,
-			\retrigVolumeChange, 0.0,
-			\finalPitchToStart, 0,
-			\finalVolumeToStart, 0,
-			\effectTimestretchStart, 0.0,
-			\effectTimestretchEnd, 0.0,
-			\effectTimestretchBeats, 0.0,
-			\effectReverse, 0,
-			\pan, 0.0,
-			\lowPassFilter, 20000.0,
-			\highPassFilter, 20.0,
-			\effectComb, 0.0,
-			\effectReverb, 0.0,
-			\velocity, 64,
-			\deltaTime, 0.17543859779835,
-			\playthrough, 0,
-			\synctobpm, 1,
-			\sliceDurationBeats, 32,
-			\sliceStart, 0,
-			\sliceEnd, 0.125,
-			\sliceBounce, 0,
-			\sliceStop, 1,
-		);
+		// NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
+		// 	"/sampler",
+		// 	"/home/zns/Documents/collidertracker/beat_bpm174.wav",
+		// 	0,
+		// 	\trackVolume, 12.0,
+		// 	\sliceCount, 64,
+		// 	\bpmSource, 175.0,
+		// 	\bpmTarget, 171.0,
+		// 	\pitch, 0.0,
+		// 	\retrigNumTotal, 16,
+		// 	\retrigRateChangeBeats, 1.0,
+		// 	\retrigRateStart, 8.0,
+		// 	\retrigRateEnd, 8.0,
+		// 	\retrigPitchChange, 0.0,
+		// 	\retrigVolumeChange, 0.0,
+		// 	\finalPitchToStart, 0,
+		// 	\finalVolumeToStart, 0,
+		// 	\effectTimestretchStart, 0.0,
+		// 	\effectTimestretchEnd, 0.0,
+		// 	\effectTimestretchBeats, 0.0,
+		// 	\effectReverse, 0,
+		// 	\pan, 0.0,
+		// 	\lowPassFilter, 20000.0,
+		// 	\highPassFilter, 20.0,
+		// 	\effectComb, 0.0,
+		// 	\effectReverb, 0.0,
+		// 	\velocity, 64,
+		// 	\deltaTime, 0.17543859779835,
+		// 	\playthrough, 1,
+		// 	\synctobpm, 1,
+		// 	\sliceDurationBeats, 32,
+		// 	\sliceStart, 0,
+		// 	\sliceEnd, 0.125,
+		// 	\sliceBounce, 0,
+		// 	\sliceStop, 1,
+		// );
 
     }.play;
 
