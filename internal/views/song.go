@@ -146,7 +146,7 @@ func RenderSongView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, GetSongStatusMessage(m), 18) // 16 rows + 2 for header
+	}, fmt.Sprintf("arrows: move | %s+arrows: edit", input.GetModifierKey()), GetSongStatusMessage(m), 18) // 16 rows + 2 for header
 }
 
 // GetSongStatusMessage returns the status message for song view
@@ -224,6 +224,5 @@ func GetSongStatusMessage(m *model.Model) string {
 		statusMsg += " | Stopped"
 	}
 
-	statusMsg += fmt.Sprintf(" | Shift+Right: Enter | %s+Arrows: Edit", input.GetModifierKey())
 	return statusMsg
 }

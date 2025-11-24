@@ -136,5 +136,5 @@ func RenderSettingsView(m *model.Model) string {
 		)
 
 		return content
-	}, fmt.Sprintf("Up/Down/Left/Right: Navigate | %s+Arrow: Adjust values | Shift+Down: Back to Chain view", input.GetModifierKey()), 15)
+	}, fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey()), "", 15)
 }

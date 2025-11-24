@@ -37,10 +37,14 @@ var (
 		debug           string
 		skipSC          bool
 		vim             bool
+		dump            string // Path to file for periodic terminal dumps
 	}
 )
 
 type scReadyMsg struct{}
+
+// DumpTickMsg triggers periodic dumps to file
+type DumpTickMsg struct{}
 
 var rootCmd = &cobra.Command{
 	Use:   "collidertracker",
@@ -71,6 +75,8 @@ func init() {
 		"Skip SuperCollider detection and management entirely")
 	rootCmd.PersistentFlags().BoolVar(&config.vim, "vim", false,
 		"Enable vim-style cursor movement (h/j/k/l)")
+	rootCmd.PersistentFlags().StringVarP(&config.dump, "dump", "d", "",
+		"Write terminal frames to specified file every 10 seconds (empty disables)")
 
 	// Set up a callback to track when --project is explicitly provided
 	rootCmd.PersistentFlags().Lookup("project").Changed = false
@@ -192,7 +198,16 @@ func restartWithProject() {
 		}
 	})
 	// Build program
-	tm = initialModel(config.port, config.project, config.vim, d)
+	tm = initialModel(config.port, config.project, config.vim, d, config.dump)
+
+	// Close dump file when function exits
+	if tm.dumpFile != nil {
+		defer func() {
+			if err := tm.dumpFile.Close(); err != nil {
+				log.Printf("Error closing dump file: %v", err)
+			}
+		}()
+	}
 
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
@@ -435,7 +450,16 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 		}
 	})
 	// Build program
-	tm = initialModel(config.port, config.project, config.vim, d)
+	tm = initialModel(config.port, config.project, config.vim, d, config.dump)
+
+	// Close dump file when function exits
+	if tm.dumpFile != nil {
+		defer func() {
+			if err := tm.dumpFile.Close(); err != nil {
+				log.Printf("Error closing dump file: %v", err)
+			}
+		}()
+	}
 
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
@@ -533,7 +557,7 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 	supercollider.Cleanup()
 }
 
-func initialModel(oscPort int, saveFolder string, vimMode bool, dispatcher *osc.StandardDispatcher) *TrackerModel {
+func initialModel(oscPort int, saveFolder string, vimMode bool, dispatcher *osc.StandardDispatcher, dumpPath string) *TrackerModel {
 	m := model.NewModel(oscPort, saveFolder, vimMode)
 
 	// Try to load saved state
@@ -590,11 +614,25 @@ func initialModel(oscPort int, saveFolder string, vimMode bool, dispatcher *osc.
 		log.Printf("Default MIDI device set to: %s (for unset devices only)", firstDevice)
 	}
 
-	return &TrackerModel{
+	tm := &TrackerModel{
 		model:         m,
 		splashState:   views.NewSplashState(36 * time.Second / 10), // 3.6 seconds (20% slower)
 		showingSplash: true,                                        // splash is ALWAYS shown until SC ready
 	}
+
+	// Open dump file if path is provided
+	if dumpPath != "" {
+		f, err := os.Create(dumpPath)
+		if err != nil {
+			log.Printf("Error opening dump file %s: %v", dumpPath, err)
+		} else {
+			tm.dumpFile = f
+			tm.lastDumpTime = time.Now()
+			log.Printf("Terminal dump enabled: writing to %s every 10 seconds", dumpPath)
+		}
+	}
+
+	return tm
 }
 
 // TrackerModel wraps the model and implements the tea.Model interface
@@ -602,6 +640,8 @@ type TrackerModel struct {
 	model         *model.Model
 	splashState   *views.SplashState
 	showingSplash bool
+	dumpFile      *os.File
+	lastDumpTime  time.Time
 }
 
 // WaveformTickMsg is a special message that fires at a steady UI rate (30fps)
@@ -629,14 +669,31 @@ func tickSplash() tea.Cmd {
 	})
 }
 
+// tickDump schedules the next DumpTickMsg for periodic dumps
+func tickDump() tea.Cmd {
+	return tea.Tick(10*time.Second, func(time.Time) tea.Msg {
+		return DumpTickMsg{}
+	})
+}
+
 func (tm *TrackerModel) Init() tea.Cmd {
+	cmds := []tea.Cmd{}
+	
 	if tm.showingSplash {
 		// Start splash screen animation at 60fps
-		return tickSplash()
+		cmds = append(cmds, tickSplash())
+	} else {
+		// Start a 30fps UI loop so the waveform redraws smoothly.
+		// Playback advancement stays on its own schedule (input.TickMsg).
+		cmds = append(cmds, tickWaveform(30))
 	}
-	// Start a 30fps UI loop so the waveform redraws smoothly.
-	// Playback advancement stays on its own schedule (input.TickMsg).
-	return tickWaveform(30)
+	
+	// Start dump ticker if dump file is enabled
+	if tm.dumpFile != nil {
+		cmds = append(cmds, tickDump())
+	}
+	
+	return tea.Batch(cmds...)
 }
 
 func (tm *TrackerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -682,6 +739,18 @@ func (tm *TrackerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// SC is ready — leave the splash screen
 		tm.showingSplash = false
 		return tm, nil
+
+	case DumpTickMsg:
+		// Write current view to dump file
+		if tm.dumpFile != nil {
+			view := tm.View()
+			timestamp := time.Now().Format("2006-01-02 15:04:05")
+			fmt.Fprintf(tm.dumpFile, "\n=== Frame at %s ===\n", timestamp)
+			fmt.Fprintf(tm.dumpFile, "%s\n", view)
+			tm.dumpFile.Sync() // Ensure it's written to disk
+		}
+		// Schedule next dump
+		return tm, tickDump()
 
 	case tea.KeyMsg:
 		// Skip splash screen on any key press

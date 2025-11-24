@@ -20,7 +20,7 @@ func init() {
 func createTestModel() *TrackerModel {
 	// Create a test model with skip-jack-check enabled
 	dispatcher := osc.NewStandardDispatcher()
-	return initialModel(57120, "test-tracker.json", false, dispatcher)
+	return initialModel(57120, "test-tracker.json", false, dispatcher, "")
 }
 
 func TestTrackerModelInit(t *testing.T) {
@@ -205,7 +205,7 @@ func TestTrackerModelViewRendering(t *testing.T) {
 			// Verify view contains expected structure
 			lines := len(strings.Split(view, "\n"))
 			assert.Greater(t, lines, 5)                         // Should have multiple lines
-			assert.LessOrEqual(t, lines, tm.model.TermHeight+5) // Should not exceed reasonable bounds
+			assert.LessOrEqual(t, lines, tm.model.TermHeight+8) // Should not exceed reasonable bounds (+8 for navigation + padding)
 		})
 	}
 }
