@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -110,6 +111,25 @@ func IsJackEnabled() bool {
 
 func IsSuperColliderEnabled() bool {
 	return isProcessRunning("sclang")
+}
+
+// findFreePort finds an available UDP port on the system in a platform-independent way
+func findFreePort() (int, error) {
+	// Listen on UDP port 0, which tells the OS to pick a free port
+	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	if err != nil {
+		return 0, fmt.Errorf("failed to resolve UDP address: %v", err)
+	}
+
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to listen on UDP: %v", err)
+	}
+	defer conn.Close()
+
+	// Get the port that was assigned
+	port := conn.LocalAddr().(*net.UDPAddr).Port
+	return port, nil
 }
 
 func StartSuperCollider() error {
@@ -223,6 +243,124 @@ func StartSuperColliderWithRecording(enableRecording bool) error {
 		tempDX7SCDFile = ""
 		startedBySelf = false
 		return fmt.Errorf("SuperCollider failed to start properly")
+	}
+
+	return nil
+}
+
+// StartSuperColliderOnFreePort starts a new sclang instance on a free port
+// when another sclang instance is already running. This allows ColliderTracker
+// to coexist with an existing sclang process.
+func StartSuperColliderOnFreePort(enableRecording bool) error {
+	// Find a free UDP port
+	freePort, err := findFreePort()
+	if err != nil {
+		return fmt.Errorf("failed to find free port: %v", err)
+	}
+
+	log.Printf("Found free port %d for new SuperCollider instance", freePort)
+
+	// Find sclang executable
+	sclangPath, err := findSclangPath()
+	if err != nil {
+		return fmt.Errorf("sclang not found: %v", err)
+	}
+
+	// Create temporary files from embedded SuperCollider files
+	tempFile, err := os.CreateTemp("", "sampler-*.scd")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary sampler file: %v", err)
+	}
+
+	// Modify the embedded content if recording is enabled
+	scdContent := embeddedSamplerSCD
+	if enableRecording {
+		log.Printf("enableRecording is true")
+		modified := strings.Replace(string(embeddedSamplerSCD), "//Server.default.record;", "Server.default.record;", 1)
+		scdContent = []byte(modified)
+	}
+
+	_, err = tempFile.Write(scdContent)
+	if err != nil {
+		tempFile.Close()
+		os.Remove(tempFile.Name())
+		return fmt.Errorf("failed to write sampler content: %v", err)
+	}
+	tempFile.Close()
+	tempSamplerFile = tempFile.Name()
+
+	// Get the directory of the sampler file to place DX7 files alongside
+	tempDir := filepath.Dir(tempSamplerFile)
+
+	// Create DX7.afx in the same directory
+	dx7AFXPath := filepath.Join(tempDir, "DX7.afx")
+	err = os.WriteFile(dx7AFXPath, embeddedDX7AFX, 0644)
+	if err != nil {
+		os.Remove(tempSamplerFile)
+		return fmt.Errorf("failed to write DX7.afx: %v", err)
+	}
+	tempDX7AFXFile = dx7AFXPath
+
+	// Create DX7.scd in the same directory
+	dx7SCDPath := filepath.Join(tempDir, "DX7.scd")
+	err = os.WriteFile(dx7SCDPath, embeddedDX7SCD, 0644)
+	if err != nil {
+		os.Remove(tempSamplerFile)
+		os.Remove(tempDX7AFXFile)
+		return fmt.Errorf("failed to write DX7.scd: %v", err)
+	}
+	tempDX7SCDFile = dx7SCDPath
+
+	// Start sclang with custom UDP port using -u flag
+	sclangProcess = exec.Command(sclangPath, "-u", strconv.Itoa(freePort), tempSamplerFile)
+
+	// On Windows, set working directory to sclang's directory so it can find scsynth
+	if runtime.GOOS == "windows" {
+		sclangProcess.Dir = filepath.Dir(sclangPath)
+	}
+
+	// Set up platform-specific process attributes
+	setupProcessGroup(sclangProcess)
+
+	// Create a port-detecting writer that wraps the log writer
+	portWriter := &portDetectingWriter{logWriter: log.Writer()}
+
+	// Redirect SuperCollider output through the port detector
+	sclangProcess.Stdout = portWriter
+	sclangProcess.Stderr = portWriter
+
+	// Start the process but don't wait for it to complete
+	err = sclangProcess.Start()
+	if err != nil {
+		os.Remove(tempSamplerFile)
+		os.Remove(tempDX7AFXFile)
+		os.Remove(tempDX7SCDFile)
+		tempSamplerFile = ""
+		tempDX7AFXFile = ""
+		tempDX7SCDFile = ""
+		return fmt.Errorf("failed to start SuperCollider on port %d: %v", freePort, err)
+	}
+
+	// Mark that we started it
+	startedBySelf = true
+
+	log.Printf("Started SuperCollider on custom port %d", freePort)
+
+	// Wait a moment and check if it's actually running
+	time.Sleep(2 * time.Second)
+	if !IsSuperColliderEnabled() {
+		// Clean up if it failed to start
+		if sclangProcess != nil && sclangProcess.Process != nil {
+			sclangProcess.Process.Kill()
+		}
+		os.Remove(tempSamplerFile)
+		os.Remove(tempDX7AFXFile)
+		os.Remove(tempDX7SCDFile)
+		tempSamplerFile = ""
+		tempDX7AFXFile = ""
+		tempDX7SCDFile = ""
+		startedBySelf = false
+		return fmt.Errorf("SuperCollider failed to start properly on port %d", freePort)
 	}
 
 	return nil

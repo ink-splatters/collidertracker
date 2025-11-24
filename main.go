@@ -230,10 +230,10 @@ func restartWithProject() {
 				log.Printf("Found existing SuperCollider instance with ColliderTracker")
 				return
 			case <-timeout.C:
-				// sclang is running but no ColliderTracker - start our own instance
-				log.Printf("sclang running but no ColliderTracker detected, starting new instance")
-				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
-					log.Printf("Failed to start SuperCollider: %v", err)
+				// sclang is running but no ColliderTracker - start new instance on a free port
+				log.Printf("sclang running but no ColliderTracker detected, starting new instance on free port")
+				if err := supercollider.StartSuperColliderOnFreePort(config.record); err != nil {
+					log.Printf("Failed to start SuperCollider on free port: %v", err)
 				}
 			checkAndUpdatePortIfNeeded(tm)
 			}
@@ -473,10 +473,10 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 				log.Printf("Found existing SuperCollider instance with ColliderTracker")
 				return
 			case <-timeout.C:
-				// sclang is running but no ColliderTracker - start our own instance
-				log.Printf("sclang running but no ColliderTracker detected, starting new instance")
-				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
-					log.Printf("Failed to start SuperCollider: %v", err)
+				// sclang is running but no ColliderTracker - start new instance on a free port
+				log.Printf("sclang running but no ColliderTracker detected, starting new instance on free port")
+				if err := supercollider.StartSuperColliderOnFreePort(config.record); err != nil {
+					log.Printf("Failed to start SuperCollider on free port: %v", err)
 				}
 			checkAndUpdatePortIfNeeded(tm)
 			}
