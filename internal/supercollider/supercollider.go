@@ -12,7 +12,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -34,7 +36,64 @@ var (
 	tempDX7SCDFile  = ""
 	sclangProcess   *exec.Cmd
 	cleanupCalled   = false
+	detectedPort    = int32(0) // Port detected from SuperCollider output, 0 means not detected yet (atomic access)
 )
+
+// Pre-compiled regex patterns for port detection (compiled once for performance)
+var (
+	portPatternTryingUsing = regexp.MustCompile(`(?i)(?:trying|using)\s+port\s+(\d+)`)
+	portPatternAddress     = regexp.MustCompile(`(?:address|on)\s+[\d.]+:(\d+)`)
+	portPatternBooting     = regexp.MustCompile(`(?i)booting\s+(\d+)`)
+)
+
+// portDetectingWriter is an io.Writer that monitors SuperCollider's output
+// for port selection messages and extracts the actual port being used
+type portDetectingWriter struct {
+	logWriter io.Writer
+}
+
+// tryExtractPort attempts to extract a port number from the given matches and stores it atomically
+func tryExtractPort(matches []string, line string) bool {
+	if len(matches) > 1 {
+		if port, parseErr := strconv.Atoi(matches[1]); parseErr == nil {
+			atomic.StoreInt32(&detectedPort, int32(port))
+			log.Printf("Detected SuperCollider using port %d from output: %s", port, strings.TrimSpace(line))
+			return true
+		}
+	}
+	return false
+}
+
+// Write implements io.Writer and scans each line for port information
+func (w *portDetectingWriter) Write(p []byte) (n int, err error) {
+	// First write to the log
+	n, err = w.logWriter.Write(p)
+	
+	// Then scan for port information
+	// SuperCollider may output messages like:
+	// "Cannot bind to UDP port 57120, trying port 57121"
+	// "Starting server 'localhost' on address 127.0.0.1:57121"
+	// "booting 57121"
+	line := string(p)
+	
+	// Try each pattern until one matches, then return early
+	// Pattern 1: "trying port XXXXX" or "using port XXXXX"
+	if matches := portPatternTryingUsing.FindStringSubmatch(line); tryExtractPort(matches, line) {
+		return n, err
+	}
+	
+	// Pattern 2: "address 127.0.0.1:XXXXX" or similar IP:port patterns
+	if matches := portPatternAddress.FindStringSubmatch(line); tryExtractPort(matches, line) {
+		return n, err
+	}
+	
+	// Pattern 3: "booting XXXXX"
+	if matches := portPatternBooting.FindStringSubmatch(line); tryExtractPort(matches, line) {
+		return n, err
+	}
+	
+	return n, err
+}
 
 func IsJackEnabled() bool {
 	// Check for common JACK daemon process names
@@ -126,9 +185,13 @@ func StartSuperColliderWithRecording(enableRecording bool) error {
 	// Set up platform-specific process attributes
 	setupProcessGroup(sclangProcess)
 
-	// Redirect SuperCollider output to the same logger used by the main application
-	sclangProcess.Stdout = log.Writer()
-	sclangProcess.Stderr = log.Writer()
+	// Create a port-detecting writer that wraps the log writer
+	// This will monitor SuperCollider's output for port selection messages
+	portWriter := &portDetectingWriter{logWriter: log.Writer()}
+	
+	// Redirect SuperCollider output through the port detector
+	sclangProcess.Stdout = portWriter
+	sclangProcess.Stderr = portWriter
 
 	// Start the process but don't wait for it to complete
 	err = sclangProcess.Start()
@@ -187,6 +250,19 @@ func StartSuperColliderWithProgress(readyChannel <-chan struct{}) error {
 	return nil
 }
 
+// GetDetectedPort returns the port that SuperCollider actually started on.
+// Returns 0 if no port has been detected yet.
+// Thread-safe via atomic operations.
+func GetDetectedPort() int {
+	return int(atomic.LoadInt32(&detectedPort))
+}
+
+// ResetDetectedPort resets the detected port (useful for testing or restarting)
+// Thread-safe via atomic operations.
+func ResetDetectedPort() {
+	atomic.StoreInt32(&detectedPort, 0)
+}
+
 func Cleanup() {
 	// Prevent multiple cleanup calls
 	if cleanupCalled {
@@ -215,6 +291,9 @@ func Cleanup() {
 		startedBySelf = false
 		sclangProcess = nil
 	}
+
+	// Reset detected port
+	ResetDetectedPort()
 
 	// Remove temporary files if we created them
 	if tempSamplerFile != "" {
