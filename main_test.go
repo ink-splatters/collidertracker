@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"log"
+	"os"
 	"strings"
 	"testing"
 
@@ -327,5 +328,148 @@ func BenchmarkTrackerModelView(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		tm.View()
+	}
+}
+
+func TestDumpAllScreens(t *testing.T) {
+	tm := createTestModel()
+	tm.showingSplash = false
+	tm.model.TermWidth = 120
+	tm.model.TermHeight = 40
+
+	// Define all screens with their names and view modes
+	screens := []struct {
+		name     string
+		viewMode types.ViewMode
+		setup    func(*TrackerModel)
+	}{
+		{
+			name:     "song",
+			viewMode: types.SongView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+				tm.model.CurrentCol = 0
+			},
+		},
+		{
+			name:     "chain",
+			viewMode: types.ChainView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+				tm.model.CurrentCol = 0
+			},
+		},
+		{
+			name:     "phrase",
+			viewMode: types.PhraseView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+				tm.model.CurrentCol = 0
+			},
+		},
+		{
+			name:     "file",
+			viewMode: types.FileView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentDir = "."
+			},
+		},
+		{
+			name:     "settings",
+			viewMode: types.SettingsView,
+			setup: func(tm *TrackerModel) {
+				tm.model.PreviousView = types.SongView
+			},
+		},
+		{
+			name:     "filemetadata",
+			viewMode: types.FileMetadataView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "retrigger",
+			viewMode: types.RetriggerView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "timestretch",
+			viewMode: types.TimestrechView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "modulate",
+			viewMode: types.ModulateView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "mixer",
+			viewMode: types.MixerView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "arpeggio",
+			viewMode: types.ArpeggioView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "midi",
+			viewMode: types.MidiView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "soundmaker",
+			viewMode: types.SoundMakerView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "ducking",
+			viewMode: types.DuckingView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+		{
+			name:     "waveform",
+			viewMode: types.WaveformView,
+			setup: func(tm *TrackerModel) {
+				tm.model.CurrentRow = 0
+			},
+		},
+	}
+
+	// Create dumps for each screen
+	for _, screen := range screens {
+		t.Run(screen.name, func(t *testing.T) {
+			// Set up the view mode
+			tm.model.ViewMode = screen.viewMode
+			screen.setup(tm)
+
+			// Render the view
+			view := tm.View()
+			assert.NotEmpty(t, view)
+
+			// Write to file
+			filename := "screen_" + screen.name + ".txt"
+			err := os.WriteFile(filename, []byte(view), 0644)
+			assert.NoError(t, err)
+
+			t.Logf("Created dump: %s", filename)
+		})
 	}
 }
