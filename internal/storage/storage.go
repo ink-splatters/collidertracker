@@ -143,21 +143,60 @@ func DoSave(m *model.Model) {
 		return
 	}
 
-	// Create the data.json.gz file inside the save folder
+	// Create the data.json.gz file inside the save folder using atomic write
 	dataFilePath := filepath.Join(m.SaveFolder, "data.json.gz")
-	file, err := os.Create(dataFilePath)
+	tempFilePath := dataFilePath + ".tmp"
+
+	// Write to temporary file first
+	file, err := os.Create(tempFilePath)
 	if err != nil {
-		log.Printf("Error creating save file: %v", err)
+		log.Printf("Error creating temporary save file: %v", err)
 		return
 	}
-	defer file.Close()
 
 	gzWriter := gzip.NewWriter(file)
-	defer gzWriter.Close()
 
 	_, err = gzWriter.Write(data)
 	if err != nil {
+		gzWriter.Close()
+		file.Close()
+		os.Remove(tempFilePath) // Clean up temp file on error
 		log.Printf("Error writing gzipped save data: %v", err)
+		return
+	}
+
+	// Close gzip writer to flush all data
+	err = gzWriter.Close()
+	if err != nil {
+		file.Close()
+		os.Remove(tempFilePath)
+		log.Printf("Error closing gzip writer: %v", err)
+		return
+	}
+
+	// Sync to ensure data is written to disk
+	err = file.Sync()
+	if err != nil {
+		file.Close()
+		os.Remove(tempFilePath)
+		log.Printf("Error syncing save file: %v", err)
+		return
+	}
+
+	// Close the file
+	err = file.Close()
+	if err != nil {
+		os.Remove(tempFilePath)
+		log.Printf("Error closing save file: %v", err)
+		return
+	}
+
+	// Atomically rename temp file to final file
+	// This is an atomic operation on most filesystems
+	err = os.Rename(tempFilePath, dataFilePath)
+	if err != nil {
+		os.Remove(tempFilePath)
+		log.Printf("Error renaming save file: %v", err)
 		return
 	}
 }
