@@ -89,5 +89,5 @@ func RenderChainView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, fmt.Sprintf("arrows: edit | %s+arrows: edit phrase", input.GetModifierKey()), GetChainStatusMessage(m), 17) // 16 rows + 1 for header
+	}, fmt.Sprintf("arrows: edit | %s+arrows: edit phrase", input.GetModifierKey()), GetChainStatusMessage(m), 16) // 16 rows (undercount waveform like Phrase view)
 }

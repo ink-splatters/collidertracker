@@ -48,9 +48,9 @@ func getCommonStyles() *ViewStyles {
 func renderViewWithCommonPattern(m *model.Model, leftHeader, rightHeader string, renderContent func(styles *ViewStyles) string, helpText string, statusMsg string, contentLines int) string {
 	styles := getCommonStyles()
 
-	// Song and Chain views should not have the extra top padding so the content starts immediately.
-	if m.ViewMode == types.SongView || m.ViewMode == types.ChainView {
-		styles.Container = styles.Container.Padding(0, 2, 1, 2) // top=0, right=2, bottom=1, left=2
+	// File views keep a top spacer but no bottom padding to fit the terminal height after footer padding.
+	if m.ViewMode == types.FileView || m.ViewMode == types.FileMetadataView {
+		styles.Container = styles.Container.Padding(1, 2, 0, 2)
 	}
 
 	// Content builder - same pattern as working views

@@ -146,7 +146,7 @@ func RenderSongView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, fmt.Sprintf("arrows: move | %s+arrows: edit", input.GetModifierKey()), GetSongStatusMessage(m), 18) // 16 rows + 2 for header
+	}, fmt.Sprintf("arrows: move | %s+arrows: edit", input.GetModifierKey()), GetSongStatusMessage(m), 17) // 16 rows + 1 type row (undercount waveform like Phrase view)
 }
 
 // GetSongStatusMessage returns the status message for song view
