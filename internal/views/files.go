@@ -62,7 +62,7 @@ func RenderFileMetadataView(m *model.Model) string {
 		content.WriteString("\n\n")
 
 		return content.String()
-	}, fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey()), "", 9)
+	}, fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey()), " ", 9) // Space as status to align footer height
 }
 
 func RenderFileView(m *model.Model) string {
@@ -111,5 +111,5 @@ func RenderFileView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, fmt.Sprintf("space: select | %s+right: play/stop", input.GetModifierKey()), "", displayedRows)
+	}, fmt.Sprintf("space: select | %s+right: play/stop", input.GetModifierKey()), " ", displayedRows) // Space as status to align footer height
 }

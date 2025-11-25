@@ -453,9 +453,9 @@ func RenderFooter(m *model.Model, contentLines int, helpText string, statusMsg s
 		content.WriteString(statusStyle.Render(statusMsg))
 	}
 
-	// File-related views get an extra blank line after navigation to align with other screens
+	// File views need extra blank lines to maintain 3 lines after navigation breadcrumb
 	if m.ViewMode == types.FileView || m.ViewMode == types.FileMetadataView {
-		content.WriteString("\n")
+		content.WriteString("\n\n")
 	}
 
 	return content.String()
