@@ -76,37 +76,10 @@ RUN echo "@audio   -  rtprio     95" >> /etc/security/limits.conf && \
 COPY icecast.xml /etc/icecast2/icecast.xml
 COPY darkice.cfg /etc/darkice.cfg
 COPY autostart.scd /home/scuser/autostart.scd
-
-# ENTRY SCRIPT FOR CLOUD
-RUN echo '#!/bin/bash\n\
-    export XDG_RUNTIME_DIR=/run/user/1000\n\
-    export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus\n\
-    ulimit -r 95 2>/dev/null || true\n\
-    ulimit -l unlimited 2>/dev/null || true\n\
-    \n\
-    # Start dbus\n\
-    dbus-daemon --session --address=$DBUS_SESSION_BUS_ADDRESS --nofork --nopidfile &\n\
-    sleep 1\n\
-    \n\
-    # Start jackd\n\
-    jackd -d alsa &\n\
-    sleep 5\n\
-    \n\
-    # Start icecast streaming server\n\
-    icecast2 -c /etc/icecast2/icecast.xml &\n\
-    echo "Waiting for icecast to start..."\n\
-    sleep 5\n\
-    \n\
-    # Start SuperCollider with jackd backend\n\
-    SC_JACK_DEFAULT_OUTPUTS="system" SC_AUDIODRIVER="jackd" sclang /home/scuser/autostart.scd &\n\
-    sleep 10\n\
-    \n\
-    # Start darkice encoder (connects to icecast)\n\
-    echo "Starting darkice..."\n\
-    darkice -c /etc/darkice.cfg\n' > /entrypoint.sh && chmod +x /entrypoint.sh
+COPY start.sh /start.sh
 
 USER scuser
 
 EXPOSE 8000 8001
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/start.sh"]
 
