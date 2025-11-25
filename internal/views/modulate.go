@@ -26,7 +26,6 @@ func RenderModulateView(m *model.Model) string {
 	header := "Modulate Settings"
 	modulateHeader := fmt.Sprintf("Modulate %02X", m.ModulateEditingIndex)
 	content.WriteString(RenderHeader(m, header, modulateHeader))
-	content.WriteString("\n")
 
 	// Get current modulate settings
 	settings := (*m.GetCurrentModulateSettings())[m.ModulateEditingIndex]
@@ -166,7 +165,8 @@ func RenderModulateView(m *model.Model) string {
 	// Footer with status
 	helpText := fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey())
 	statusMsg := fmt.Sprintf("Modulate settings")
-	content.WriteString(RenderFooter(m, 9, helpText, statusMsg))
+	// contentLines: waveform(2) + header(1) + settings(9) = 12
+	content.WriteString(RenderFooter(m, 12, helpText, statusMsg))
 
 	// Apply container padding
 	return containerStyle.Render(content.String())
