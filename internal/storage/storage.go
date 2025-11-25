@@ -358,7 +358,7 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 		log.Printf("Warning: Failed to load metadata from save folder: %v", err)
 	}
 
-	// Refresh file browser and push current volume to OSC
+	// Refresh file browser
 	LoadFiles(m)
 	m.SendOSCPregainMessage()
 	m.SendOSCPostgainMessage()

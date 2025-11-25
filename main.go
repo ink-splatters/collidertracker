@@ -93,6 +93,10 @@ func main() {
 // checkAndUpdatePortIfNeeded checks if SuperCollider detected a different port
 // and updates the OSC client if necessary
 func checkAndUpdatePortIfNeeded(tm *TrackerModel) {
+	// DISABLED: Using fixed ports instead of dynamic detection
+	// ColliderTracker sends to 57120, listens on 57121
+	// SuperCollider listens on 57120, sends to 57121
+	/*
 	// Wait a moment for SuperCollider to output its port information
 	time.Sleep(2 * time.Second)
 	// Check if SuperCollider detected a different port
@@ -100,6 +104,7 @@ func checkAndUpdatePortIfNeeded(tm *TrackerModel) {
 		log.Printf("SuperCollider started on port %d (expected %d), updating OSC configuration", detectedPort, config.port)
 		tm.model.UpdateOSCPort(detectedPort)
 	}
+	*/
 }
 
 func restartWithProject() {
@@ -219,6 +224,7 @@ func restartWithProject() {
 			log.Printf("Error starting OSC server: %v", err)
 		}
 	}()
+
 
 	// Fast SuperCollider detection and startup
 	if !config.skipSC {

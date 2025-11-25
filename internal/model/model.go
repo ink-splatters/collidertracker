@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/hypebeast/go-osc/osc"
-	"github.com/schollz/onsets"
+	onset "github.com/schollz/onsets"
 
 	"github.com/schollz/collidertracker/internal/getbpm"
 	"github.com/schollz/collidertracker/internal/midiplayer"
@@ -1589,6 +1589,7 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 			msg.Append(int32(1))
 		}
 
+		log.Printf("DEBUG: Sending OSC to /instrument for %s:%d", m.oscClient.IP(), m.oscClient.Port())
 		err := m.oscClient.Send(msg)
 		if err != nil {
 			log.Printf("Error sending OSC instrument message: %v", err)
@@ -2010,6 +2011,19 @@ func (m *Model) SendOSCShimmerMessage() {
 		Parameters: []interface{}{"shimmer", normalizedValue},
 		LogFormat:  "OSC shimmer message sent: /set 'shimmer' %.3f (%.1f%%)",
 		LogArgs:    []interface{}{normalizedValue, m.ShimmerPercent},
+	}
+	m.sendOSCMessage(config)
+}
+
+func (m *Model) SendOSCListenerPortMessage() {
+	// Tell SuperCollider what port ColliderTracker is listening on
+	// This is oscPort + 1
+	listenerPort := m.oscPort + 1
+	config := OSCMessageConfig{
+		Address:    "/set_listener_port",
+		Parameters: []interface{}{int32(listenerPort)},
+		LogFormat:  "OSC listener port message sent: /set_listener_port %d",
+		LogArgs:    []interface{}{listenerPort},
 	}
 	m.sendOSCMessage(config)
 }

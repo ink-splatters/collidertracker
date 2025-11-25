@@ -1,4 +1,7 @@
 (
+// Ensure sclang listens on port 57120 for incoming OSC messages
+thisProcess.openUDPPort(57120);
+
 s.waitForBoot({
 Routine{
 ~serverLatency = 0.1;
@@ -77,35 +80,35 @@ Routine{
 
     	SynthDef("Open303",{
     		arg t_trig=1;
-	        var snd, env;
+            var snd, env;
     		var ducked;
-	        snd = Open303.ar(
-	            gate: \gate.kr(1),
-	            trig: t_trig,
-	            noteNum: \note.kr(60),
-	            velocity: (\velocity.kr(100)>64.0),
-	            waveform: \waveform.kr(0.2), // OPTION: waveform 0.0-1.0, default 0.5, coarse 0.1, fine 0.01
-	            tuning: \tuning.kr(440), // OPTION: tuning 110-880, default 440, coarse 10, fine 1
-	            cutoff: \lowPassFilter.kr(1000),
-	            resonance: \resonance.kr(85), // OPTION: resonance 1-200, default 50, coarse 10, fine 1
-				envMod: \envMod.kr(60), // OPTION: 0–100, default 50, coarse 10, fine 1
-				decay: \normalDecay.kr(800), // OPTION: 30–3000, default 1000, coarse 100, fine 10
-				accent: \accent.kr(70), // OPTION: 0–100, default 50, coarse 10, fine 1
-				pregain: \basePregain.kr(6.neg), // OPTION: -60–0, default -12, coarse 6, fine 1
-				postgain: \basePostgain.kr(6.neg), // OPTION: -60–0, default -12, coarse 6, fine 1
-				distortion: \baseDrive.kr(0), // OPTION: 0–100, default 0, coarse 10, fine 1
-				ampSustain: \ampSustain.kr(0), // OPTION: -inf–0, default 0, coarse 6, fine 1
-				ampDecay: \ampDecay.kr(1230), // OPTION: 30–3000, default 1230, coarse 100, fine 10
-				ampRelease: \ampRelease.kr(1), // OPTION: 1–2000, default 1, coarse 100, fine 1
-				feedbackHPF: \feedbackHPF.kr(150), // OPTION: 20–2000, default 150, coarse 100, fine 10
-				normalAttack: \normalAttack.kr(3), // OPTION: 0.3–30, default 3, coarse 1, fine 0.1
-				accentAttack: \accentAttack.kr(3), // OPTION: 0.3–30, default 3, coarse 1, fine 0.1
-				accentDecay: \accentDecay.kr(200), // OPTION: 30–3000, default 200, coarse 100, fine 10
-				slideTime: \slideTime.kr(60), // OPTION: 0–300, default 60, coarse 10, fine 1
-	        );
-			env = EnvGen.ar(
-				Env.perc(\attack.kr(0.1), \duration.kr(1)), t_trig, doneAction:2
-			);
+            snd = Open303.ar(
+                gate: \gate.kr(1),
+                trig: t_trig,
+                noteNum: \note.kr(60),
+                velocity: (\velocity.kr(100)>64.0),
+                waveform: \waveform.kr(0.2), // OPTION: waveform 0.0-1.0, default 0.5, coarse 0.1, fine 0.01
+                tuning: \tuning.kr(440), // OPTION: tuning 110-880, default 440, coarse 10, fine 1
+                cutoff: \lowPassFilter.kr(1000),
+                resonance: \resonance.kr(85), // OPTION: resonance 1-200, default 50, coarse 10, fine 1
+    			envMod: \envMod.kr(60), // OPTION: 0–100, default 50, coarse 10, fine 1
+    			decay: \normalDecay.kr(800), // OPTION: 30–3000, default 1000, coarse 100, fine 10
+    			accent: \accent.kr(70), // OPTION: 0–100, default 50, coarse 10, fine 1
+    			pregain: \basePregain.kr(6.neg), // OPTION: -60–0, default -12, coarse 6, fine 1
+    			postgain: \basePostgain.kr(6.neg), // OPTION: -60–0, default -12, coarse 6, fine 1
+    			distortion: \baseDrive.kr(0), // OPTION: 0–100, default 0, coarse 10, fine 1
+    			ampSustain: \ampSustain.kr(0), // OPTION: -inf–0, default 0, coarse 6, fine 1
+    			ampDecay: \ampDecay.kr(1230), // OPTION: 30–3000, default 1230, coarse 100, fine 10
+    			ampRelease: \ampRelease.kr(1), // OPTION: 1–2000, default 1, coarse 100, fine 1
+    			feedbackHPF: \feedbackHPF.kr(150), // OPTION: 20–2000, default 150, coarse 100, fine 10
+    			normalAttack: \normalAttack.kr(3), // OPTION: 0.3–30, default 3, coarse 1, fine 0.1
+    			accentAttack: \accentAttack.kr(3), // OPTION: 0.3–30, default 3, coarse 1, fine 0.1
+    			accentDecay: \accentDecay.kr(200), // OPTION: 30–3000, default 200, coarse 100, fine 10
+    			slideTime: \slideTime.kr(60), // OPTION: 0–300, default 60, coarse 10, fine 1
+            );
+    		env = EnvGen.ar(
+    			Env.perc(\attack.kr(0.1), \duration.kr(1)), t_trig, doneAction:2
+    		);
 
     		snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
     		snd = Pan2.ar(snd,\pan.kr(0));
@@ -145,7 +148,7 @@ Routine{
     	SynthDef("TB303",{
     		arg t_trig=1;
     		var osc, filt, preDrive, postDrive;
-			var snd;
+    		var snd;
     		var ducked;
     		var cutoff = \lowPassFilter.kr(20000);
     		var res = \resonance.kr(0.5).clip(0.1, 3.0);
@@ -163,9 +166,9 @@ Routine{
     		// 	1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
     		// 	doneAction:2,
     		// );
-			var env = EnvGen.ar(
-				Env.perc(\attack.kr(0.1), \duration.kr(1)), t_trig, doneAction:2
-			);
+    		var env = EnvGen.ar(
+    			Env.perc(\attack.kr(0.1), \duration.kr(1)), t_trig, doneAction:2
+    		);
     		// var env2 = EnvGen.ar(Env.perc(\attack.kr(0.1), \release.kr(0.5)), t_trig);
     		var fenv = EnvGen.kr(Env.perc(0.001,\envRelease.kr(0.2)*\duration.kr(1)), t_trig) * \envAmt.kr(1.0) * (1 + (\accent.kr(0) * 1.4));
 
@@ -392,46 +395,46 @@ Routine{
     		Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
     	}).add;
 
-		SynthDef("Juno60",{
-			arg gate = 1;
-			var ducked;
-			var snd =  Juno60.ar(
-				gate: 1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
-				note: \note.kr(60),
-				amp: 1.0,
-				attack: \attack.kr(0.1),
-				decay: \decay.kr(1.0),
-				sustain: \sustain.kr(0.7),
-				release: \release.kr(0.5),
-				cutoff: \lowPassFilter.kr(440).explin(100,20000,0.001,1).min(1.0).max(0.0),  // Control cutoff with mouse Y position
-				resonance: \juno60Resonance.kr(0.1),
-				envMod: \juno60EnvMod.kr(0.1),  // Control envelope modulation with mouse X position
-				saw: \juno60OscSaw.kr(0.5),
-				pulse: \juno60OscPulse.kr(0.0),
-				sub: \juno60OscSub.kr(0.5),
-				noise: \juno60OscNoise.kr(0.0),
-				pwm: \juno60OscPwm.kr(0.5),
-				chorus: \juno60JunoChorus.kr(4), // 0 = off, 1, 2, 3, 4, 5, 6 are different chorus types
-				chorusDrywet:  \juno60ChorusDryWet.kr(0.5),
-				lfoRate: \juno60LfoRate.kr(0.3),
-				lfoDelay: \juno60LfoDelay.kr(0.2),
-				lfoAuto: \juno60LfoAuto.kr(1.0), // LFO auto-triggers and resets its phase when a note  is played
-				dcoLfo: \juno60DcoLfo.kr(0.05),
-				dcoPwmMod: 1.0,
-				dcoRange: \juno60DcoRange.kr(1.0), // 1.0 = same pitch, 0.5 = one octave down, 2.0 = one octave up
-				hpf: \highPassFilter.kr(100).explin(10,20000,0.0001,1).min(1.0).max(0.0),  // Control high-pass filter with mouse Y position
-				vcfLfo: \juno60VcfLfo.kr(0.05),
-				vcfKey: \juno60VcfKey.kr(0.5),
-				vcfDir: \juno60VcfDir.kr(1),
-				vcaType: 0.0, // 0 = envelope, 1 = gate
-				vcaValue: 1.0,
-				doneAction: 2
-			);
+    	SynthDef("Juno60",{
+    		arg gate = 1;
+    		var ducked;
+    		var snd =  Juno60.ar(
+    			gate: 1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+    			note: \note.kr(60),
+    			amp: 1.0,
+    			attack: \attack.kr(0.1),
+    			decay: \decay.kr(1.0),
+    			sustain: \sustain.kr(0.7),
+    			release: \release.kr(0.5),
+    			cutoff: \lowPassFilter.kr(440).explin(100,20000,0.001,1).min(1.0).max(0.0),  // Control cutoff with mouse Y position
+    			resonance: \juno60Resonance.kr(0.1),
+    			envMod: \juno60EnvMod.kr(0.1),  // Control envelope modulation with mouse X position
+    			saw: \juno60OscSaw.kr(0.5),
+    			pulse: \juno60OscPulse.kr(0.0),
+    			sub: \juno60OscSub.kr(0.5),
+    			noise: \juno60OscNoise.kr(0.0),
+    			pwm: \juno60OscPwm.kr(0.5),
+    			chorus: \juno60JunoChorus.kr(4), // 0 = off, 1, 2, 3, 4, 5, 6 are different chorus types
+    			chorusDrywet:  \juno60ChorusDryWet.kr(0.5),
+    			lfoRate: \juno60LfoRate.kr(0.3),
+    			lfoDelay: \juno60LfoDelay.kr(0.2),
+    			lfoAuto: \juno60LfoAuto.kr(1.0), // LFO auto-triggers and resets its phase when a note  is played
+    			dcoLfo: \juno60DcoLfo.kr(0.05),
+    			dcoPwmMod: 1.0,
+    			dcoRange: \juno60DcoRange.kr(1.0), // 1.0 = same pitch, 0.5 = one octave down, 2.0 = one octave up
+    			hpf: \highPassFilter.kr(100).explin(10,20000,0.0001,1).min(1.0).max(0.0),  // Control high-pass filter with mouse Y position
+    			vcfLfo: \juno60VcfLfo.kr(0.05),
+    			vcfKey: \juno60VcfKey.kr(0.5),
+    			vcfDir: \juno60VcfDir.kr(1),
+    			vcaType: 0.0, // 0 = envelope, 1 = gate
+    			vcaValue: 1.0,
+    			doneAction: 2
+    		);
 
-			snd = Balance2.ar(snd[0],snd[1],\pan.kr(0));
+    		snd = Balance2.ar(snd[0],snd[1],\pan.kr(0));
 
-			snd = snd * 4.0 * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
-				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
+    		snd = snd * 4.0 * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
+    			* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 
 
     		// check if signal is ducked
@@ -465,7 +468,7 @@ Routine{
     		Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
     		Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
 
-		}).add;
+    	}).add;
 
 
 
@@ -498,8 +501,8 @@ Routine{
     		var subOscLevel = \subOscLevel.kr(0);
     		var subOscDetune = \subOscDetune.kr(0);
     		var noiseLevel = \noiseLevel.kr(0);
-			// main env
-			var env = EnvGen.ar(
+    		// main env
+    		var env = EnvGen.ar(
     			Env.adsr(
     				\attack.kr(0.1),
     				\decay.kr(1.0),
@@ -782,8 +785,8 @@ Routine{
     			sliceCount = 32, // number of slices to cut the sample into
     			sliceStart = 0.0, // slice start position (0.0-1.0, calculated in Go)
     			sliceEnd = 1.0,   // slice end position (0.0-1.0, calculated in Go)
-				sliceBounce = 0.0,
-				sliceStop = 0.0,
+    			sliceBounce = 0.0,
+    			sliceStop = 0.0,
     			trackOut,
     			effectDry = 1.0,
     			effectDryOut,
@@ -815,13 +818,13 @@ Routine{
     			var retrigCountFeedback = 0;
     			var timestretchPos, timestretchRate, effectTimestretch;
     			var side, atk, rel, depth, slopeAbove, thresh, ducked;
-				var sliceStartOriginal = sliceStart;
-				var sliceEndOriginal = sliceEnd;
-				var localInData;
-				var endToggled;
+    			var sliceStartOriginal = sliceStart;
+    			var sliceEndOriginal = sliceEnd;
+    			var localInData;
+    			var endToggled;
     			// Position is always provided by Go code (sliceStart and sliceEnd)
     			// Handle reverse playback by swapping start and end
-				
+
     			pos = Select.kr(effectReverse>0,[
     				sliceStart,  // forward: use start position
     				sliceEnd     // reverse: use end position
@@ -864,9 +867,9 @@ Routine{
 
     			// Calculate retriggers
     			localInData = LocalIn.ar(3);
-				retrigCountFeedback = localInData[0];
-				posCurFeedback = localInData[1];
-				posCurFeedbackLast = localInData[2];
+    			retrigCountFeedback = localInData[0];
+    			posCurFeedback = localInData[1];
+    			posCurFeedbackLast = localInData[2];
     			retrigTrig = Impulse.ar(XLine.ar(retrigRateStart,retrigRateEnd,beatDuration*retrigRateChangeBeats) / beatDuration);
     			retrigCount = PulseCount.ar(retrigTrig * (retrigCountFeedback<retrigNumTotal));
     			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNumTotal));
@@ -882,17 +885,17 @@ Routine{
     				rate * -1,
     			]);
 
-				endToggled = ToggleFF.kr(
-					((posCurFeedback > (sliceEndOriginal - 0.001)) * (posCurFeedbackLast <= (sliceEndOriginal - 0.001)))
-					+
-					((posCurFeedback < (sliceStartOriginal + 0.001)) * (posCurFeedbackLast >= (sliceStartOriginal + 0.001)))
-				);
-				// disable endToggled if retrigNumTotal > 0
-				endToggled = endToggled * (1 - (retrigNumTotal>0)) * (\playthrough.ir(0)>0);
-				// bounce if end toggled
-				rate = rate * Select.kr(endToggled * sliceBounce,[1.0,-1.0]);
-				gate = gate * Select.kr(endToggled * (1 - sliceBounce),[1,0]);
-				
+    			endToggled = ToggleFF.kr(
+    				((posCurFeedback > (sliceEndOriginal - 0.001)) * (posCurFeedbackLast <= (sliceEndOriginal - 0.001)))
+    				+
+    				((posCurFeedback < (sliceStartOriginal + 0.001)) * (posCurFeedbackLast >= (sliceStartOriginal + 0.001)))
+    			);
+    			// disable endToggled if retrigNumTotal > 0
+    			endToggled = endToggled * (1 - (retrigNumTotal>0)) * (\playthrough.ir(0)>0);
+    			// bounce if end toggled
+    			rate = rate * Select.kr(endToggled * sliceBounce,[1.0,-1.0]);
+    			gate = gate * Select.kr(endToggled * (1 - sliceBounce),[1,0]);
+
 
 
     			// Change volume based on retrigger
@@ -919,7 +922,7 @@ Routine{
     				end:frames,
     				resetPos:timestretchRate,
     			);
-				posCur = Select.ar(aOrB,[posA,posB])/frames;
+    			posCur = Select.ar(aOrB,[posA,posB])/frames;
     			snd=(BufRd.ar(
     				numChannels:ch+1,
     				bufnum:buf,
@@ -991,14 +994,14 @@ Routine{
     				])
     			);
 
-				// Send out the slice start/stop and playhead position and gate info for the track
-				SendReply.kr(Impulse.kr(30),'/sampler_playhead',[
-					trackId,
-					gate,
-					posCur, 
-					sliceStartOriginal,
-					sliceEndOriginal
-				]);
+    			// Send out the slice start/stop and playhead position and gate info for the track
+    			SendReply.kr(Impulse.kr(30),'/sampler_playhead',[
+    				trackId,
+    				gate,
+    				posCur,
+    				sliceStartOriginal,
+    				sliceEndOriginal
+    			]);
 
     			// Feedback
     			LocalOut.ar([retrigCount,posCur, posCurFeedback]);
@@ -1054,18 +1057,18 @@ Routine{
     			Mix.new(In.ar(track7Bus,2)),
     			Mix.new(In.ar(track8Bus,2)),
     		],0.3,0.3).max(0.00001).ampdb,3)]);
-			// Send out /track_waveform message with the normalized waveform of each track 
-			SendReply.kr(Impulse.kr(30),'/track_waveform',[
-				Normalizer.ar(LPF.ar(In.ar(track0Bus,2)[0],60))*(Amplitude.kr(In.ar(track0Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track1Bus,2)[0],60))*(Amplitude.kr(In.ar(track1Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track2Bus,2)[0],60))*(Amplitude.kr(In.ar(track2Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track3Bus,2)[0],60))*(Amplitude.kr(In.ar(track3Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track4Bus,2)[0],60))*(Amplitude.kr(In.ar(track4Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track5Bus,2)[0],60))*(Amplitude.kr(In.ar(track5Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track6Bus,2)[0],60))*(Amplitude.kr(In.ar(track6Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track7Bus,2)[0],60))*(Amplitude.kr(In.ar(track7Bus,2)[0]).ampdb>70.neg),
-				Normalizer.ar(LPF.ar(In.ar(track8Bus,2)[0],60))*(Amplitude.kr(In.ar(track8Bus,2)[0]).ampdb>70.neg),
-			]);
+    		// Send out /track_waveform message with the normalized waveform of each track
+    		SendReply.kr(Impulse.kr(30),'/track_waveform',[
+    			Normalizer.ar(LPF.ar(In.ar(track0Bus,2)[0],60))*(Amplitude.kr(In.ar(track0Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track1Bus,2)[0],60))*(Amplitude.kr(In.ar(track1Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track2Bus,2)[0],60))*(Amplitude.kr(In.ar(track2Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track3Bus,2)[0],60))*(Amplitude.kr(In.ar(track3Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track4Bus,2)[0],60))*(Amplitude.kr(In.ar(track4Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track5Bus,2)[0],60))*(Amplitude.kr(In.ar(track5Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track6Bus,2)[0],60))*(Amplitude.kr(In.ar(track6Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track7Bus,2)[0],60))*(Amplitude.kr(In.ar(track7Bus,2)[0]).ampdb>70.neg),
+    			Normalizer.ar(LPF.ar(In.ar(track8Bus,2)[0],60))*(Amplitude.kr(In.ar(track8Bus,2)[0]).ampdb>70.neg),
+    		]);
 
     		// add in comb
     		snd = snd + ((0.5*sndComb)+
@@ -1155,16 +1158,16 @@ Routine{
     		var notes = Array.new();
     		var nonNoteIndex = 4;
     		var keepSearching = true;
-			var polyphonic = true;
-			var monophonic = false;
-			var lastMessage = nil;
-			msg.do({ arg item, i;
-				if (lastMessage==\monophonic,{
-					polyphonic = (item<1);
-					monophonic = (item>0);
-				});
-				lastMessage = item;
-			});
+    		var polyphonic = true;
+    		var monophonic = false;
+    		var lastMessage = nil;
+    		msg.do({ arg item, i;
+    			if (lastMessage==\monophonic,{
+    				polyphonic = (item<1);
+    				monophonic = (item>0);
+    			});
+    			lastMessage = item;
+    		});
     		// find where msg[4:] is not a float
     		msg[4..].do({ |v,i|
     			if (v.isNumber && keepSearching,{
@@ -1182,17 +1185,17 @@ Routine{
     		});
 
     		// stop all currently playing synths for this track
-			if (polyphonic, {
-				~synthsPlaying.at(track).values.do({
-					arg syn;
-					if (syn.isPlaying, {
-						if (syn.notNil,{
-							// [syn,"stopped"].postln;
-							syn.set(\gate,0);
-						});
-					});
-				});
-			});
+    		if (polyphonic, {
+    			~synthsPlaying.at(track).values.do({
+    				arg syn;
+    				if (syn.isPlaying, {
+    					if (syn.notNil,{
+    						// [syn,"stopped"].postln;
+    						syn.set(\gate,0);
+    					});
+    				});
+    			});
+    		});
     		if (noteOn > 0,{
     			var args;
     			var dict = Dictionary.new;
@@ -1204,7 +1207,7 @@ Routine{
     				effectReverbOut: ~busReverb,
     				trackId:         track,
     				trackOut:        ~busTrack[track],
-					t_trig:			1,
+    				t_trig:			1,
     			));
     			dict.putPairs(msg.copyToEnd(nonNoteIndex));
     			// round numbers to 1/128 in place
@@ -1236,18 +1239,18 @@ Routine{
     				var synthName = synName ++ "_" ++ n.asString;
     				// print out all the synthargs
     				// synthArgs.do({ arg a,i; [i,a].postln; });
-					// if monophonic check to see if there is a synth playing just use that instead
-					if (monophonic, {
-						var playingSynth = ~synthsPlaying.at(track).values.detect { |syn| syn.notNil and: { syn.isPlaying } };
-						// ["monophonic", playingSynth].postln;	
-						if (playingSynth.notNil, {
-							// ["reused", playingSynth].postln;
-							playingSynth.set(*synthArgs);
-							^nil;
-						});
-					});
-					// play new synth
-					// ["playing",synthName].postln;
+    				// if monophonic check to see if there is a synth playing just use that instead
+    				if (monophonic, {
+    					var playingSynth = ~synthsPlaying.at(track).values.detect { |syn| syn.notNil and: { syn.isPlaying } };
+    					// ["monophonic", playingSynth].postln;
+    					if (playingSynth.notNil, {
+    						// ["reused", playingSynth].postln;
+    						playingSynth.set(*synthArgs);
+    						^nil;
+    					});
+    				});
+    				// play new synth
+    				// ["playing",synthName].postln;
     				~synthsPlaying.at(track).put(synthName,
     					Synth.head(targetGroup,synthToPlay,synthArgs).onFree({
     						// [synthName,"freed"].postln;
@@ -1337,10 +1340,10 @@ Routine{
     	OSCFunc({ |msg|
     		var filename = msg[1];
     		// msg.postln;
-			// log every key/value pair
-			msg.do({ |v,i|
-				// [i,v].postln;
-			});
+    		// log every key/value pair
+    		msg.do({ |v,i|
+    			// [i,v].postln;
+    		});
     		if (~sampleCache.at(filename).isNil,{
     			// load sample
     			~sampleCache.put(filename, Buffer.read(s,filename,action:{ |b|
@@ -1433,7 +1436,7 @@ Routine{
     		},{
     			~playSynthFromMsg.(msg);
     		});
-    	},'/instrument');
+    	},'/instrument',recvPort: NetAddr.langPort);
 
     	OSCFunc({ |msg|
     		// stop all currently playing synths in all tracks
@@ -1458,15 +1461,15 @@ Routine{
     	OSCFunc({ |msg|
     		NetAddr.new("127.0.0.1", 57121).sendMsg("/waveform", msg[3]);
     	},'/waveform');
-		OSCFunc({ |msg|
-			// NetAddr.new("127.0.0.1", 57121).sendMsg("/sampler_playhead", *msg[3..].postln);
-		NetAddr.new("127.0.0.1", 57121).sendMsg("/sampler_playhead", *msg[3..]);
-		},'/sampler_playhead');
+    	OSCFunc({ |msg|
+    		// NetAddr.new("127.0.0.1", 57121).sendMsg("/sampler_playhead", *msg[3..].postln);
+    	NetAddr.new("127.0.0.1", 57121).sendMsg("/sampler_playhead", *msg[3..]);
+    	},'/sampler_playhead');
     	OSCFunc({ |msg|
     		NetAddr.new("127.0.0.1", 57121).sendMsg("/track_volume", *msg[3..]);
     	},'/track_volume');
-		OSCFunc({ |msg|
-			NetAddr.new("127.0.0.1", 57121).sendMsg("/track_waveform", *msg[3..]);
+    	OSCFunc({ |msg|
+    		NetAddr.new("127.0.0.1", 57121).sendMsg("/track_waveform", *msg[3..]);
     	},'/track_waveform');
     	OSCFunc({ |msg|
     		var filename = msg[1].asString;
@@ -1576,8 +1579,6 @@ Routine{
     		});
     	}.play;
 
-
-
     	//Server.default.record;
     	// ["playing startupSound"].postln;
     	 Synth.head(Server.default,"startupSound",[\out,~busDry]);
@@ -1604,63 +1605,63 @@ Routine{
     	// 		\sustain, 1.0,
     	// 		\effectReverb, 0.3,
     	// 		\lowPassFilter, 300,
-		// 		\envMod, 0.1,
-		// 		\oscSaw, 1.0,
-		// 		\oscPulse, 0.1,
-		// 		\oscSub, 0.5,
-		// 		\oscNoise, 0.3,
-		// 		\oscPwm, 0.0,
-		// 		\junoChorus, 4,
-		// 		\chorusDrywet, 1.0,
-		// 		\lfoRate, 0.3,
-		// 		\lfoDelay, 0.2,
-		// 		\lfoAuto, 0,
-		// 		\dcoLfo, 0.0,
-		// 		\dcoPwmMod, 1,
-		// 		\dcoRange, 1.0,
-		// 		\highPassFilter, 10,
+    	// 		\envMod, 0.1,
+    	// 		\oscSaw, 1.0,
+    	// 		\oscPulse, 0.1,
+    	// 		\oscSub, 0.5,
+    	// 		\oscNoise, 0.3,
+    	// 		\oscPwm, 0.0,
+    	// 		\junoChorus, 4,
+    	// 		\chorusDrywet, 1.0,
+    	// 		\lfoRate, 0.3,
+    	// 		\lfoDelay, 0.2,
+    	// 		\lfoAuto, 0,
+    	// 		\dcoLfo, 0.0,
+    	// 		\dcoPwmMod, 1,
+    	// 		\dcoRange, 1.0,
+    	// 		\highPassFilter, 10,
     	// 		\noteSize, 4,
     	// 		\trackVolume, -12,
     	// 	]);
     	// });
 
 
-		// NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
-		// 	"/sampler",
-		// 	"/home/zns/Documents/collidertracker/beat_bpm174.wav",
-		// 	0,
-		// 	\trackVolume, 12.0,
-		// 	\sliceCount, 64,
-		// 	\bpmSource, 175.0,
-		// 	\bpmTarget, 171.0,
-		// 	\pitch, 0.0,
-		// 	\retrigNumTotal, 16,
-		// 	\retrigRateChangeBeats, 1.0,
-		// 	\retrigRateStart, 8.0,
-		// 	\retrigRateEnd, 8.0,
-		// 	\retrigPitchChange, 0.0,
-		// 	\retrigVolumeChange, 0.0,
-		// 	\finalPitchToStart, 0,
-		// 	\finalVolumeToStart, 0,
-		// 	\effectTimestretchStart, 0.0,
-		// 	\effectTimestretchEnd, 0.0,
-		// 	\effectTimestretchBeats, 0.0,
-		// 	\effectReverse, 0,
-		// 	\pan, 0.0,
-		// 	\lowPassFilter, 20000.0,
-		// 	\highPassFilter, 20.0,
-		// 	\effectComb, 0.0,
-		// 	\effectReverb, 0.0,
-		// 	\velocity, 64,
-		// 	\deltaTime, 0.17543859779835,
-		// 	\playthrough, 1,
-		// 	\synctobpm, 1,
-		// 	\sliceDurationBeats, 32,
-		// 	\sliceStart, 0,
-		// 	\sliceEnd, 0.125,
-		// 	\sliceBounce, 0,
-		// 	\sliceStop, 1,
-		// );
+    	// NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg(
+    	// 	"/sampler",
+    	// 	"/home/zns/Documents/collidertracker/beat_bpm174.wav",
+    	// 	0,
+    	// 	\trackVolume, 12.0,
+    	// 	\sliceCount, 64,
+    	// 	\bpmSource, 175.0,
+    	// 	\bpmTarget, 171.0,
+    	// 	\pitch, 0.0,
+    	// 	\retrigNumTotal, 16,
+    	// 	\retrigRateChangeBeats, 1.0,
+    	// 	\retrigRateStart, 8.0,
+    	// 	\retrigRateEnd, 8.0,
+    	// 	\retrigPitchChange, 0.0,
+    	// 	\retrigVolumeChange, 0.0,
+    	// 	\finalPitchToStart, 0,
+    	// 	\finalVolumeToStart, 0,
+    	// 	\effectTimestretchStart, 0.0,
+    	// 	\effectTimestretchEnd, 0.0,
+    	// 	\effectTimestretchBeats, 0.0,
+    	// 	\effectReverse, 0,
+    	// 	\pan, 0.0,
+    	// 	\lowPassFilter, 20000.0,
+    	// 	\highPassFilter, 20.0,
+    	// 	\effectComb, 0.0,
+    	// 	\effectReverb, 0.0,
+    	// 	\velocity, 64,
+    	// 	\deltaTime, 0.17543859779835,
+    	// 	\playthrough, 1,
+    	// 	\synctobpm, 1,
+    	// 	\sliceDurationBeats, 32,
+    	// 	\sliceStart, 0,
+    	// 	\sliceEnd, 0.125,
+    	// 	\sliceBounce, 0,
+    	// 	\sliceStop, 1,
+    	// );
 
     }.play;
 

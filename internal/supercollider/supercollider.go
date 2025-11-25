@@ -45,6 +45,7 @@ var (
 	portPatternTryingUsing = regexp.MustCompile(`(?i)(?:trying|using)\s+port\s+(\d+)`)
 	portPatternAddress     = regexp.MustCompile(`(?:address|on)\s+[\d.]+:(\d+)`)
 	portPatternBooting     = regexp.MustCompile(`(?i)booting\s+(\d+)`)
+	portPatternOSCListening = regexp.MustCompile(`(?i)OSC\s+LISTENING\s+ON\s*,?\s*(\d+)`)
 )
 
 // portDetectingWriter is an io.Writer that monitors SuperCollider's output
@@ -72,27 +73,33 @@ func (w *portDetectingWriter) Write(p []byte) (n int, err error) {
 	
 	// Then scan for port information
 	// SuperCollider may output messages like:
+	// "[ OSC LISTENING ON , 58462 ]" (sclang language port - most reliable)
 	// "Cannot bind to UDP port 57120, trying port 57121"
 	// "Starting server 'localhost' on address 127.0.0.1:57121"
 	// "booting 57121"
 	line := string(p)
 	
 	// Try each pattern until one matches, then return early
-	// Pattern 1: "trying port XXXXX" or "using port XXXXX"
+	// Pattern 1: "OSC LISTENING ON , XXXXX" (sclang language port - highest priority)
+	if matches := portPatternOSCListening.FindStringSubmatch(line); tryExtractPort(matches, line) {
+		return n, err
+	}
+
+	// Pattern 2: "trying port XXXXX" or "using port XXXXX"
 	if matches := portPatternTryingUsing.FindStringSubmatch(line); tryExtractPort(matches, line) {
 		return n, err
 	}
-	
-	// Pattern 2: "address 127.0.0.1:XXXXX" or similar IP:port patterns
+
+	// Pattern 3: "address 127.0.0.1:XXXXX" or similar IP:port patterns
 	if matches := portPatternAddress.FindStringSubmatch(line); tryExtractPort(matches, line) {
 		return n, err
 	}
-	
-	// Pattern 3: "booting XXXXX"
+
+	// Pattern 4: "booting XXXXX"
 	if matches := portPatternBooting.FindStringSubmatch(line); tryExtractPort(matches, line) {
 		return n, err
 	}
-	
+
 	return n, err
 }
 
