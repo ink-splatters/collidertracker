@@ -126,7 +126,6 @@ func RenderSettingsView(m *model.Model) string {
 		// Join everything vertically
 		content := lipgloss.JoinVertical(
 			lipgloss.Left,
-			"", // Empty line after title
 			headerRow,
 			"", // Empty line after headers
 			columnsRow,
@@ -136,5 +135,5 @@ func RenderSettingsView(m *model.Model) string {
 		)
 
 		return content
-	}, fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey()), " ", 15)
+	}, fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey()), " ", 13)
 }
