@@ -92,7 +92,7 @@ echo "Waiting for icecast to start..."\n\
 sleep 5\n\
 \n\
 # Start SuperCollider with ALSA backend\n\
-SC_JACK_DEFAULT_OUTPUTS="system" SC_AUDIODRIVER="ALSA" sclang < /home/scuser/autostart.scd &\n\
+SC_JACK_DEFAULT_OUTPUTS="system" SC_AUDIODRIVER="ALSA" sclang /home/scuser/autostart.scd &\n\
 sleep 10\n\
 \n\
 # Start darkice encoder (connects to icecast)\n\
