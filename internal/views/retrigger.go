@@ -180,7 +180,7 @@ func RenderRetriggerView(m *model.Model) string {
 	// Footer with status
 	helpText := fmt.Sprintf("arrows: navigate | %s+arrows: adjust", input.GetModifierKey())
 	statusMsg := fmt.Sprintf("Retrigger: %d times, %.2f/beat to %.2f/beat", settings.Times, settings.Start, settings.End)
-	content.WriteString(RenderFooter(m, 13, helpText, statusMsg))
+	content.WriteString(RenderFooter(m, 12, helpText, statusMsg))
 
 	// Apply container padding
 	return containerStyle.Render(content.String())

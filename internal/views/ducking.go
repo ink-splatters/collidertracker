@@ -125,6 +125,7 @@ func RenderDuckingView(m *model.Model) string {
 	if settings.Type == 2 {
 		footerPad = 9
 	}
+	footerPad -= 1
 	content.WriteString(RenderFooter(m, footerPad, helpText, statusMsg))
 
 	// Apply container padding
