@@ -67,12 +67,22 @@ func RenderFileMetadataView(m *model.Model) string {
 
 func RenderFileView(m *model.Model) string {
 	header := fmt.Sprintf("File Browser: %s", m.CurrentDir)
+	visibleRows := m.GetVisibleRows()
+
+	// Only count the rows we actually render so the footer can pad the view
+	// to the full height even when there are fewer files than the visible area.
+	displayedRows := len(m.Files) - m.ScrollOffset
+	if displayedRows < 0 {
+		displayedRows = 0
+	}
+	if displayedRows > visibleRows {
+		displayedRows = visibleRows
+	}
 
 	return renderViewWithCommonPattern(m, header, "", func(styles *ViewStyles) string {
 		var content strings.Builder
 
 		// File list
-		visibleRows := m.GetVisibleRows()
 		for i := 0; i < visibleRows && i+m.ScrollOffset < len(m.Files); i++ {
 			dataIndex := i + m.ScrollOffset
 
@@ -101,5 +111,5 @@ func RenderFileView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, fmt.Sprintf("space: select | %s+right: play/stop", input.GetModifierKey()), "", m.GetVisibleRows())
+	}, fmt.Sprintf("space: select | %s+right: play/stop", input.GetModifierKey()), "", displayedRows)
 }

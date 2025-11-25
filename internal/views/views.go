@@ -48,6 +48,11 @@ func getCommonStyles() *ViewStyles {
 func renderViewWithCommonPattern(m *model.Model, leftHeader, rightHeader string, renderContent func(styles *ViewStyles) string, helpText string, statusMsg string, contentLines int) string {
 	styles := getCommonStyles()
 
+	// Song and Chain views should not have the extra top padding so the content starts immediately.
+	if m.ViewMode == types.SongView || m.ViewMode == types.ChainView {
+		styles.Container = styles.Container.Padding(0, 2, 1, 2) // top=0, right=2, bottom=1, left=2
+	}
+
 	// Content builder - same pattern as working views
 	var content strings.Builder
 
@@ -165,15 +170,18 @@ func RenderHeader(m *model.Model, leftContent, rightContent string) string {
 
 // RenderNavigationLines renders the standard 3-line navigation display at the top of the status section
 // Format:
-//   O          ← Shift+Up target (Options)
+//
+//	O          ← Shift+Up target (Options)
+//
 // S-C-P        ← Current view indicator (highlighted) + Shift+Right target + help text
-//   M          ← Shift+Down target (Mixer)
+//
+//	M          ← Shift+Down target (Mixer)
 func RenderNavigationLines(m *model.Model, helpText string) string {
 	highlightStyle := lipgloss.NewStyle().Background(lipgloss.Color("7")).Foreground(lipgloss.Color("0"))
 	dimStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	
+
 	var line1, line2, line3 string
-	
+
 	// Determine what appears above and below the current view
 	// The logic is:
 	// - O (Options/Settings) appears above Song, Chain, Phrase, and sub-views (but not above itself or Mixer)
@@ -181,8 +189,8 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 	// - D (File Metadata) appears above File browser
 	var topLabel string
 	var bottomLabel string
-	var highlightPosition int // Position of the highlighted character (0-based)
-	var highlightTopLabel bool // Whether to highlight the top label
+	var highlightPosition int     // Position of the highlighted character (0-based)
+	var highlightTopLabel bool    // Whether to highlight the top label
 	var highlightBottomLabel bool // Whether to highlight the bottom label
 
 	switch m.ViewMode {
@@ -245,10 +253,11 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 		highlightPosition = 6 // F is at position 6 (S-C-P-F)
 
 	case types.FileMetadataView:
-		// File Metadata view: nothing above/below
-		topLabel = ""
+		// File Metadata view: D above F
+		topLabel = "D"
 		bottomLabel = ""
-		highlightPosition = 8 // D is at position 8 (S-C-P-F-D)
+		highlightPosition = 6    // F is at position 6 (S-C-P-F)
+		highlightTopLabel = true // Highlight D
 
 	case types.RetriggerView, types.TimestrechView, types.ModulateView,
 		types.ArpeggioView, types.MidiView, types.SoundMakerView, types.DuckingView:
@@ -262,7 +271,7 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 		bottomLabel = ""
 		highlightPosition = 0
 	}
-	
+
 	// Build the 3 lines with proper alignment
 	// Line 1: Top label aligned with the highlighted character
 	if topLabel != "" {
@@ -274,10 +283,10 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 	} else {
 		line1 = ""
 	}
-	
+
 	// Line 2: Current view path (S-C-P or variations)
 	line2 = buildNavigationChain(m, highlightStyle, dimStyle, helpText)
-	
+
 	// Line 3: Bottom label aligned with the highlighted character
 	if bottomLabel != "" {
 		if highlightBottomLabel {
@@ -288,79 +297,79 @@ func RenderNavigationLines(m *model.Model, helpText string) string {
 	} else {
 		line3 = ""
 	}
-	
+
 	return line1 + "\n" + line2 + "\n" + line3
 }
 
 // buildNavigationChain builds the main navigation chain line (e.g., "S-C-P")
 func buildNavigationChain(m *model.Model, highlightStyle, dimStyle lipgloss.Style, helpText string) string {
 	var chain string
-	
+
 	// Build the navigation chain based on current view
 	switch m.ViewMode {
 	case types.SongView:
 		// S is highlighted, -C-P is shown dimmed
 		chain = highlightStyle.Render("S") + dimStyle.Render("-C-P")
-		
+
 	case types.ChainView:
 		// S-C-P with C highlighted
 		chain = dimStyle.Render("S-") + highlightStyle.Render("C") + dimStyle.Render("-P")
-		
+
 	case types.PhraseView:
 		// S-C-P-X format with P highlighted, X varies by column
 		fourthChar := determinePhraseFourthChar(m)
 		chain = dimStyle.Render("S-C-") + highlightStyle.Render("P") + dimStyle.Render(fourthChar)
-		
+
 	case types.FileView:
 		// S-C-P-F with F highlighted (file browser from phrase view)
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("F")
-		
+
 	case types.RetriggerView:
 		// S-C-P-R with R highlighted
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("R")
-		
+
 	case types.TimestrechView:
 		// S-C-P-T with T highlighted
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("T")
-		
+
 	case types.ModulateView:
 		// S-C-P-O with O highlighted (mOdulate)
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("O")
-		
+
 	case types.ArpeggioView:
 		// S-C-P-A with A highlighted
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("A")
-		
+
 	case types.MidiView:
 		// S-C-P-I with I highlighted (mIdI)
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("I")
-		
+
 	case types.SoundMakerView:
 		// S-C-P-S with S highlighted
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("S")
-		
+
 	case types.DuckingView:
 		// S-C-P-D with D highlighted
 		chain = dimStyle.Render("S-C-P-") + highlightStyle.Render("D")
-		
+
 	case types.SettingsView:
 		// Settings view: Show S-C-P all dimmed (no highlighting in chain)
 		// Only the O label is highlighted
 		chain = dimStyle.Render("S-C-P")
-		
+
 	case types.MixerView:
 		// Mixer view: Show S-C-P all dimmed (no highlighting in chain)
 		// Only the M label is highlighted
 		chain = dimStyle.Render("S-C-P")
-		
+
 	case types.FileMetadataView:
-		// S-C-P-F-D with D highlighted (File Metadata from File browser)
-		chain = dimStyle.Render("S-C-P-F-") + highlightStyle.Render("D")
-		
+		// File metadata shows file browser path with no highlight in the chain; D is highlighted above
+		chain = dimStyle.Render("S-C-P-F")
+
 	default:
 		chain = highlightStyle.Render("?")
 	}
-	
+
 	// Add help text starting at column 15 if provided
 	if helpText != "" {
 		// Calculate padding needed to reach column 15
@@ -372,14 +381,14 @@ func buildNavigationChain(m *model.Model, highlightStyle, dimStyle lipgloss.Styl
 		}
 		return chain + strings.Repeat(" ", paddingNeeded) + helpText
 	}
-	
+
 	return chain
 }
 
 // determinePhraseFourthChar determines the 4th character in the navigation based on the current column in phrase view
 func determinePhraseFourthChar(m *model.Model) string {
 	phraseViewType := m.GetPhraseViewType()
-	
+
 	if phraseViewType == types.InstrumentPhraseView {
 		// Instrument phrase view columns
 		switch m.CurrentCol {
@@ -425,7 +434,7 @@ func RenderFooter(m *model.Model, contentLines int, helpText string, statusMsg s
 		statusLines = 1
 	}
 	footerLines := navLines + statusLines
-	
+
 	// Fill remaining space if terminal is larger
 	// Account for container padding (4) and footer lines
 	maxContentLines := m.TermHeight - 4 - footerLines
@@ -437,11 +446,16 @@ func RenderFooter(m *model.Model, contentLines int, helpText string, statusMsg s
 
 	// Render navigation lines with help text
 	content.WriteString(RenderNavigationLines(m, helpText))
-	
+
 	// Add status message if provided
 	if statusMsg != "" {
 		content.WriteString("\n")
 		content.WriteString(statusStyle.Render(statusMsg))
+	}
+
+	// File-related views get an extra blank line after navigation to align with other screens
+	if m.ViewMode == types.FileView || m.ViewMode == types.FileMetadataView {
+		content.WriteString("\n")
 	}
 
 	return content.String()
