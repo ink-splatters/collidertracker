@@ -455,7 +455,7 @@ func RenderFooter(m *model.Model, contentLines int, helpText string, statusMsg s
 
 	// File views need extra blank lines to maintain 3 lines after navigation breadcrumb
 	if m.ViewMode == types.FileView || m.ViewMode == types.FileMetadataView {
-		content.WriteString("\n\n")
+		content.WriteString("\n")
 	}
 
 	return content.String()
